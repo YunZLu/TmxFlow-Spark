@@ -18,6 +18,7 @@ deploy_process() {
     # 克隆仓库
     if [ ! -d "/Spark-TTS" ]; then
         git clone https://github.com/SparkAudio/Spark-TTS.git /Spark-TTS
+        rm -rf /Spark-TTS/cli/SparkTTS.py
     fi
 
     # 创建conda环境
