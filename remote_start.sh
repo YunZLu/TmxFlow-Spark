@@ -24,12 +24,12 @@ deploy_process() {
     cd /Spark-TTS || exit
     if ! conda env list | grep -q "sparktts"; then
         conda create -n sparktts -y python=3.12
+        # 安装依赖
+        source /root/miniconda3/etc/profile.d/conda.sh
+        conda activate sparktts
+        pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
     fi
 
-    # 安装依赖
-    source /root/miniconda3/etc/profile.d/conda.sh
-    conda activate sparktts
-    pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host=mirrors.aliyun.com
 
     # 下载模型
     mkdir -p pretrained_models/Spark-TTS-0.5B
