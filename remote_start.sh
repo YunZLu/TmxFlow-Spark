@@ -8,6 +8,7 @@ fi
 
 # 部署流程函数
 deploy_process() {
+
     # 检查必要工具
     for pkg in ssh git unzip; do
         if ! command -v $pkg &> /dev/null; then
@@ -18,6 +19,11 @@ deploy_process() {
     # 克隆仓库
     if [ ! -d "/Spark-TTS" ]; then
         git clone https://github.com/SparkAudio/Spark-TTS.git /Spark-TTS
+    fi
+
+    # 设置自启动
+    if ! grep -q "remote_start.sh" /root/.bashrc; then
+        echo -e "\n# SparkTTS自动启动\n/usr/local/bin/remote_start.sh" >> /root/.bashrc
         rm -rf /Spark-TTS/cli/SparkTTS.py
     fi
 
@@ -73,10 +79,6 @@ deploy_process() {
         /etc/init.d/ssh restart
     fi
     
-    # 设置自启动
-    if ! grep -q "remote_start.sh" /root/.bashrc; then
-        echo -e "\n# SparkTTS自动启动\n/usr/local/bin/remote_start.sh" >> /root/.bashrc
-    fi
 }
 
 # 启动流程函数（保持不变）
