@@ -38,11 +38,13 @@ auto_deploy() {
             local missing=()
             [ ! -x "$(command -v git)" ] && missing+=("git")
             [ ! -x "$(command -v python3)" ] && missing+=("python3")
-            [  -x "$(python3 -c "import venv")" ] && missing+=("python3-venv")
-            
+            if ! python3 -c "import venv" &>/dev/null; then
+                missing+=("python3-venv")
+            fi
+       
             if [ ${#missing[@]} -gt 0 ]; then
                 echo -e "${YELLOW}[!] 缺少依赖: ${missing[*]}${NC}"
-                bash -s < <(curl -sSL https://linuxmirrors.cn/main.sh)
+                bash -s < <(curl -sSL https://linuxmirrors.cn/main
                 apt update -y && apt install -y ${missing[@]}
             fi
         }
