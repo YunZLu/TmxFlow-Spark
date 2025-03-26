@@ -34,20 +34,20 @@ auto_deploy() {
         echo -e "${CYAN}[+] 正在检测系统环境...${NC}"
         
         # 基础依赖检查
-        check_deps() {
-            local missing=()
-            [ ! -x "$(command -v git)" ] && missing+=("git")
-            [ ! -x "$(command -v python3)" ] && missing+=("python3")
-            if ! python3 -c "import venv" &>/dev/null; then
-                missing+=("python3-venv")
-            fi
+  check_deps() {
+       local missing=()
+       [ ! -x "$(command -v git)" ] && missing+=("git")
+       [ ! -x "$(command -v python3)" ] && missing+=("python3")
+       if ! python3 -c "import venv" &>/dev/null; then
+           missing+=("python3-venv")
+       fi
        
-            if [ ${#missing[@]} -gt 0 ]; then
-                echo -e "${YELLOW}[!] 缺少依赖: ${missing[*]}${NC}"
-                bash -s < <(curl -sSL https://linuxmirrors.cn/main
-                apt update -y && apt install -y ${missing[@]}
-            fi
-        }
+       if [ ${#missing[@]} -gt 0 ]; then
+           echo -e "${YELLOW}[!] 缺少依赖: ${missing[*]}${NC}"
+           bash -s < <(curl -sSL https://linuxmirrors.cn/main.sh)
+           apt update -y && apt install -y ${missing[@]}
+       fi
+   }
         
         # 克隆仓库
         check_repo() {
