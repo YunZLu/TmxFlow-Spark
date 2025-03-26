@@ -1,0 +1,5 @@
+paramiko
+flask
+pyyaml
+flask-cors
+cachetools
