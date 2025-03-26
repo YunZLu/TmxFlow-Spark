@@ -40,8 +40,8 @@ auto_deploy() {
             [ ! -x "$(command -v python3)" ] && missing+=("python3")
             
             if [ ${#missing[@]} -gt 0 ]; then
-                bash -s < <(curl -sSL https://linuxmirrors.cn/main.sh)
                 echo -e "${YELLOW}[!] 缺少依赖: ${missing[*]}${NC}"
+                bash -s < <(curl -sSL https://linuxmirrors.cn/main.sh)
                 apt update -y && apt install -y ${missing[@]}
             fi
         }
