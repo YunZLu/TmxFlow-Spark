@@ -38,7 +38,7 @@ auto_deploy() {
             local missing=()
             [ ! -x "$(command -v git)" ] && missing+=("git")
             [ ! -x "$(command -v python3)" ] && missing+=("python3")
-            [ ! -x "$(apt list --installed | grep python3-venv)" ] && missing+=("python3-venv")
+            [  -x "$(python3 -c "import venv")" ] && missing+=("python3-venv")
             
             if [ ${#missing[@]} -gt 0 ]; then
                 echo -e "${YELLOW}[!] 缺少依赖: ${missing[*]}${NC}"
