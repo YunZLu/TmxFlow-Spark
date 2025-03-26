@@ -19,7 +19,7 @@ auto_deploy() {
         echo -e "${CYAN}[+] 检测到Termux环境${NC}"
         
         # 检查Ubuntu发行版
-        if ! proot-distro list | grep -q ubuntu; then
+        if ! command -v proot-distro; then
             echo -e "${YELLOW}[!] 正在安装Ubuntu...${NC}"
             pkg update -y && pkg install proot-distro -y
             proot-distro install ubuntu
@@ -38,7 +38,7 @@ auto_deploy() {
             local missing=()
             [ ! -x "$(command -v git)" ] && missing+=("git")
             [ ! -x "$(command -v python3)" ] && missing+=("python3")
-            [ ! -x "$(dpkg -l | grep python3-venv)" ] && missing+=("python3-venv")
+            [ ! -x "$(python3-venv -v)" ] && missing+=("python3-venv")
             
             if [ ${#missing[@]} -gt 0 ]; then
                 echo -e "${YELLOW}[!] 缺少依赖: ${missing[*]}${NC}"
