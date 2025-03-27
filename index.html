@@ -195,6 +195,31 @@
             }
         }
 
+        /* 添加按钮容器和删除按钮样式 */
+        .action-buttons {
+            display: flex;
+            gap: var(--small-spacing);
+            margin-top: var(--spacing);
+            flex-wrap: wrap;
+        }
+        
+        .delete-btn {
+            background: #e74c3c !important; /* 红色系强调危险操作 */
+            transition: all 0.3s ease;
+        }
+        
+        .delete-btn:hover {
+            background: #c0392b !important;
+            transform: translateY(-2px);
+        }
+        
+        /* 移动端堆叠显示 */
+        @media (max-width: 767px) {
+            .action-buttons button {
+                width: 100%;
+            }
+        }
+
         button:hover {
             background: var(--secondary);
             transform: translateY(-2px);
@@ -311,7 +336,11 @@
             <button onclick="generateAudio()">
                 <i class="fas fa-play-circle"></i> 开始生成
             </button>
-
+            
+            <button onclick="handleDeleteRecent()" class="delete-btn">
+                <i class="fas fa-trash-alt"></i> 删除最近音频
+            </button>
+                     
             <div class="player-container">
                 <audio id="audioPlayer" controls></audio>
             </div>
@@ -534,6 +563,33 @@
                 isGeneratingTTS = false;
                 generateBtn.disabled = false;
                 generateBtn.innerHTML = '<i class="fas fa-play-circle"></i> 开始生成';
+            }
+        }
+        
+        async function handleDeleteRecent() {
+            if (!confirm('确定要删除最近生成的音频文件吗？此操作不可恢复！')) return;
+        
+            const btn = document.querySelector('.delete-btn');
+            try {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> 删除中...';
+                
+                const response = await fetch(`${API_BASE_URL}/api/cache`, { method: 'DELETE' });
+                const result = await response.json();
+                
+                if (!response.ok) throw new Error(result.error || result.message);
+                
+                // 统一处理删除结果
+                if (result.deleted_file) {
+                    alert(`成功删除文件: ${result.deleted_file}`);
+                } else {
+                    alert(result.message); // 显示"没有可删除的音频文件"
+                }
+            } catch (e) {
+                alert(`操作失败: ${e.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-trash-alt"></i> 删除最近音频';
             }
         }
         
