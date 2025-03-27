@@ -191,6 +191,11 @@ if [ "$current_dir" = "$termux_home" ]; then
     if [ ! -d "$UBUNTU_DIR" ]; then
         echo -e "${YELLOW}⚠️ 未检测到Ubuntu子系统，正在安装...${NC}"
         
+	if ! command -v proot-distro; then
+            echo -e "${BLUE}🛠️ 正在安装openssh...${NC}"
+            pkg update -y && pkg install openssh -y && echo -e "\n${GREEN}✅ SSH安装成功，可以开始连接远程服务器了${NC}"
+        fi
+	
         if ! command -v proot-distro; then
             echo -e "${BLUE}🛠️ 正在安装proot-distro...${NC}"
             pkg update -y && pkg install proot-distro -y
