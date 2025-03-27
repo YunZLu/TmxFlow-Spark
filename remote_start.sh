@@ -96,7 +96,9 @@ start_process() {
         read -p "请输入数字选择: " choice
 
         case $choice in
-            1) nohup ./cpolar tcp 2020 & ;;
+            1) 
+                kill -9 $(pgrep -f cpolar)
+                ./cpolar tcp 2020 & ;;
             2) 
                 read -p "请输入新token: " new_token
                 ./cpolar authtoken "$new_token"
