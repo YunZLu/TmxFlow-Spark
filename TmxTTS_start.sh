@@ -38,13 +38,10 @@ NC='\033[0m'
         check_deps() {
              local missing=()
              [ ! -x "$(command -v git)" ] && missing+=("git")
-             [ ! -x "$(command -v python3)" ] && missing+=("python=3")
+	         [ ! -x "$(command -v python3)" ] ||&& missing+=("python=3")
              [ ! -x "$(command -v yq)" ] && missing+=("yq")
              [ ! -x "$(command -v lolcat)" ] && missing+=("lolcat")
-             if ! python3 -c "import venv" &>/dev/null; then
-                  missing+=("python3-venv")
-             fi
-               
+             dpkg -l python3-venv | grep ^ii || missing+=("python3-venv")
              # 安装依赖
              if [ ${#missing[@]} -gt 0 ]; then
                    echo -e "${YELLOW}⚠️ 缺少依赖: ${missing[*]}${NC}"
@@ -72,11 +69,12 @@ NC='\033[0m'
             cd TmxFlow-Spark || exit 1
             if [ ! -d "venv/bin/activate" ]; then
                 echo -e "${BLUE}🐍 正在创建虚拟环境...${NC}"
-                python3 -m venv venv || python -m venv venv
+                python3 -m venv venv
                 echo -e "${BLUE}📦 正在安装依赖...${NC}"
                 source venv/bin/activate
                 pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
                 pip install -r requirements.txt
+
                 deactivate
                 echo -e "${GREEN}✅ 环境配置完成!${NC}"
             fi
@@ -118,7 +116,7 @@ echo -e "${BLUE}═════════════════════�
                 echo -e "\n${CYAN}🚀 正在启动应用...${NC}"
                 cd /root/TmxFlow-Spark
                 source venv/bin/activate
-                python3 main.py || python main.py
+                python3 main.py
                 deactivate
                 echo -e "${YELLOW}按回车键返回主菜单...${NC}"
                 read
