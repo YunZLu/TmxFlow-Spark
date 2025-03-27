@@ -41,7 +41,7 @@ NC='\033[0m'
 	         [ ! -x "$(command -v python3)" ] && missing+=("python=3")
              [ ! -x "$(command -v yq)" ] && missing+=("yq")
              [ ! -x "$(command -v lolcat)" ] && missing+=("lolcat")
-             dpkg -l python3-venv | grep ^ii || missing+=("python3-venv")
+             dpkg -l python3-venv | grep ^ii > /dev/null || missing+=("python3-venv")
              # 安装依赖
              if [ ${#missing[@]} -gt 0 ]; then
                    echo -e "${YELLOW}⚠️ 缺少依赖: ${missing[*]}${NC}"
@@ -67,7 +67,7 @@ NC='\033[0m'
         # 配置Python环境
         setup_python() {
             cd TmxFlow-Spark || exit 1
-            if [ ! -d "venv/bin/activate" ]; then
+            if [ ! -f "venv/bin/activate" ]; then
                 echo -e "${BLUE}🐍 正在创建虚拟环境...${NC}"
                 python3 -m venv venv
                 echo -e "${BLUE}📦 正在安装依赖...${NC}"
@@ -161,7 +161,7 @@ echo -e "${BLUE}═════════════════════�
                 echo -e "\n${YELLOW}请输入新的密码:${NC}"
                 read password
                 
-                yq -y --arg username "$username" --arg password "$password" '.username = $username | .ssh.password = $password' "$config_file" -i
+                yq -y --arg username "$username" --arg password "$password" '.ssh.username = $username | .ssh.password = $password' "$config_file" -i
                 
                 if [ $? -eq 0 ]; then
                     echo -e "\n${GREEN}✅ 账户信息已更新！当前配置${NC}"
