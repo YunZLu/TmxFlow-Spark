@@ -197,7 +197,7 @@ if [ "$current_dir" = "$termux_home" ]; then
             pkg update -y && pkg install proot-distro -y
         fi
         
-        proot-distro install ubuntu -y
+        proot-distro install ubuntu
     fi
     proot-distro login ubuntu -- bash -c "
         $(declare -f deploy show_menu)
