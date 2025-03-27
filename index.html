@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark-TTS语音克隆</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #23a6d5;
+            --secondary: #23d5ab;
+            --glass: rgba(255, 255, 255, 0.1);
+            --spacing: 1.5rem;
+            --small-spacing: 0.75rem;
+        }
+
+        body {
+            margin: 0;
+            padding: 1rem;
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: white;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 2.5rem;
+            text-align: center;
+        }
+
+        .param-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--spacing);
+            margin-bottom: var(--spacing);
+        }
+
+        @media (min-width: 768px) {
+            .param-group {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            body {
+                padding: 2rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .glass-panel {
+                padding: 2rem;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .param-group {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-combo {
+            display: flex;
+            flex-direction: column;
+            gap: var(--small-spacing);
+        }
+
+        label {
+            display: block;
+            margin-bottom: var(--small-spacing);
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        select, input:not([type="radio"]), textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        select:hover, input:not([type="radio"]):hover, textarea:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        select:focus, input:not([type="radio"]):focus, textarea:focus {
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+        }
+
+        ::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.5rem 0;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            writing-mode: horizontal-tb;
+        }
+
+        /* 修改单选框样式 - 增加特异性和!important */
+        .radio-item input[type="radio"] {
+            width: 18px !important;
+            height: 18px !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+            border: 2px solid rgba(255, 255, 255, 0.5) !important;
+            border-radius: 50% !important;
+            outline: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            margin-right: 5px !important;
+            position: relative !important;
+            transition: all 0.2s !important;
+            background-color: transparent !important;
+        }
+
+        .radio-item input[type="radio"]:checked {
+            background-color: transparent !important;
+            border: 2px solid rgba(255, 255, 255, 0.8) !important;
+        }
+
+        .radio-item input[type="radio"]:checked::after {
+            content: '' !important;
+            position: absolute !important;
+            width: 12px !important;
+            height: 12px !important;
+            background: white !important;
+            border-radius: 50% !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            margin-top: var(--spacing);
+        }
+
+        @media (min-width: 768px) {
+            button {
+                width: auto;
+            }
+        }
+
+        button:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .player-container {
+            margin-top: var(--spacing);
+            text-align: center;
+        }
+
+        audio {
+            width: 100%;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="glass-panel">
+            <h1><i class="fas fa-robot"></i> Spark-TTS语音克隆</h1>
+            
+            <div class="param-group">
+                <!-- 文本输入 -->
+                <div class="input-group">
+                    <label><i class="fas fa-comment"></i> 生成语音文本</label>
+                    <textarea id="text" rows="3" placeholder="请输入要合成语音的文本..."></textarea>
+                </div>
+
+                <!-- 文本文件 -->
+                <div class="input-group">
+                    <label><i class="fas fa-file-alt"></i> 生成语音文件</label>
+                    <select id="text_file">
+                        <option value="">请选择文本文件...</option>
+                    </select>
+                </div>
+
+                <!-- 提示音频 -->
+                <div class="input-group">
+                    <label><i class="fas fa-music"></i> 提示音频</label>
+                    <select id="prompt_audio">
+                        <option value="">请选择提示音频...</option>
+                    </select>
+                </div>
+
+                <!-- 提示文本 -->
+                <div class="input-group">
+                    <label><i class="fas fa-file-word"></i> 提示文本</label>
+                    <div class="input-combo">
+                        <select id="prompt_text" onchange="handlePromptTextSelect(this.value)">
+                            <option value="">请选择提示文本文件...</option>
+                        </select>
+                        <textarea id="prompt_text_input" 
+                                rows="2" 
+                                placeholder="或直接输入提示文本..."
+                                onchange="handlePromptTextInput(this.value)"></textarea>
+                    </div>
+                </div>
+
+                <!-- 性别选择 -->
+                <div class="input-group">
+                    <label><i class="fas fa-venus-mars"></i> 声音性别</label>
+                    <div class="radio-group" id="gender_group">
+                        <label class="radio-item">
+                            <input type="radio" name="gender" value="male">男性
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="gender" value="female">女性
+                        </label>
+                        <label class="radio-item">
+                            <input type="radio" name="gender" value="" checked>无
+                        </label>
+                    </div>
+                </div>
+                
+
+                <!-- 音调选择 -->
+                <div class="input-group">
+                    <label><i class="fas fa-signal"></i> 音调</label>
+                    <select id="pitch"></select>
+                </div>
+            
+                <!-- 情感选择 -->
+                <div class="input-group">
+                    <label><i class="fas fa-smile"></i> 情感</label>
+                    <select id="emotion"></select>
+                </div>
+            
+                <!-- 语速选择 -->
+                <div class="input-group">
+                    <label><i class="fas fa-tachometer-alt"></i> 语速</label>
+                    <select id="speed"></select>
+                </div>
+
+                <!-- Seed -->
+                <div class="input-group">
+                    <label><i class="fas fa-fingerprint"></i> 种子</label>
+                    <input type="number" id="seed" min="0" step="1">
+                </div>
+            </div>
+
+            <button onclick="generateAudio()">
+                <i class="fas fa-play-circle"></i> 开始生成
+            </button>
+
+            <div class="player-container">
+                <audio id="audioPlayer" controls></audio>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isGeneratingTTS = false;
+        const generateBtn = document.querySelector('button');
+        let paramConfig = {};
+        const API_BASE_URL = 'http://127.0.0.1:8080';
+        
+        // 初始化配置
+        function initConfig() {
+            fetch(`${API_BASE_URL}/api/config`)
+                .then(res => res.json())
+                .then(config => {
+                    paramConfig = config;
+                    initDropdowns();
+                    initDisplayListeners();  // 新增显示监听
+                })
+                .catch(err => {
+                    console.error("获取配置失败:", err);
+                    alert("获取配置失败，请检查服务器连接");
+                });
+        }
+        
+        // 统一初始化入口
+        function initDropdowns() {
+            // 参数选择器初始化
+            initDynamicSelect('pitch', paramConfig.pitch);
+            initDynamicSelect('emotion', paramConfig.emotion);
+            initDynamicSelect('speed', paramConfig.speed);
+            
+            // 文件列表加载
+            loadFileList('prompt_audio', 'prompt_audio');
+            loadFileList('text_file', 'text_file');
+            loadFileList('prompt_text', 'prompt_text');
+        }
+        
+        // 修复后的动态选择初始化（支持数组结构）
+        function initDynamicSelect(id, options) {
+            const select = document.getElementById(id);
+            const fragment = document.createDocumentFragment();
+            
+            // 创建默认选项
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = '请选择...';
+            fragment.appendChild(defaultOpt);
+        
+            // 批量创建选项
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.display;
+                fragment.appendChild(opt);
+            });
+            
+            select.innerHTML = '';
+            select.appendChild(fragment);
+        }
+        
+        // 新增状态显示监听
+        function initDisplayListeners() {
+            const updateDisplay = (selectId, displayId) => {
+                document.getElementById(selectId).addEventListener('change', function() {
+                    document.getElementById(displayId).textContent = 
+                        this.selectedOptions[0]?.textContent || '未选择';
+                });
+            };
+            
+            updateDisplay('pitch', 'current_pitch');
+            updateDisplay('speed', 'current_speed');
+            updateDisplay('emotion', 'current_emotion');
+        }
+        
+        // 初始化配置
+        initConfig();
+
+        // 加载文件列表
+        async function loadFileList(elementId, type) {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/files/${type}`);
+                const data = await res.json();
+                const select = document.getElementById(elementId);
+                
+                if (data.files && Array.isArray(data.files)) {
+                    data.files.forEach(file => {
+                        select.innerHTML += `<option value="${file}">${file}</option>`;
+                    });
+                }
+            } catch (err) {
+                console.error(`加载${type}列表失败:`, err);
+            }
+        }
+
+        // 提示文本选择处理
+        function handlePromptTextSelect(value) {
+            const textInput = document.getElementById('prompt_text_input');
+            if (value) {
+                textInput.value = '';
+                textInput.disabled = true;
+            } else {
+                textInput.disabled = false;
+            }
+        }
+
+        // 提示文本输入处理
+        function handlePromptTextInput(value) {
+            const select = document.getElementById('prompt_text');
+            if (value) {
+                select.value = '';
+                select.disabled = true;
+            } else {
+                select.disabled = false;
+            }
+        }
+
+        // 生成音频
+        async function generateAudio() {
+            if (isGeneratingTTS) return;
+            
+            // 收集参数
+            const params = {
+                text: document.getElementById('text').value,
+                text_file: document.getElementById('text_file').value,
+                prompt_audio: document.getElementById('prompt_audio').value,
+                prompt_text: document.getElementById('prompt_text').value || 
+                           document.getElementById('prompt_text_input').value,
+                gender: document.querySelector('input[name="gender"]:checked').value,
+                pitch: document.getElementById('pitch').value,
+                emotion: document.getElementById('emotion').value,
+                speed: document.getElementById('speed').value,
+                seed: document.getElementById('seed').value
+            };
+
+            // 过滤空字符串参数（直接修改原对象）
+                for (const key of Object.keys(params)) {
+                    if (params[key] === "") {
+                        delete params[key];
+                    }
+                }
+
+            // 参数验证
+            if (!params.text && !params.text_file) {
+                alert('请填写文本或选择文本文件！');
+                return;
+            }
+
+            // 新增验证：没有提示音频且未选择性别时
+            if (!params.prompt_audio && !params.gender) {
+                alert('请至少选择提示音频或指定声音性别！');
+                return;
+            }
+
+            try {
+                isGeneratingTTS = true;
+                generateBtn.disabled = true;
+                generateBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> 生成中...';
+                // 发送请求并直接处理音频流
+                const response = await fetch(`${API_BASE_URL}/tts?${new URLSearchParams(params)}`);
+                
+                if (!response.ok) {
+                    // 尝试读取错误信息（如果后端返回JSON错误）
+                    try {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || errorData.description || `服务器错误: ${response.status}`);
+                    } catch {
+                        throw new Error(`请求失败: ${response.status} ${response.statusText}`);
+                    }
+                }
+
+                // 处理二进制音频数据
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                // 更新音频播放器
+                const audioPlayer = document.getElementById('audioPlayer');
+                audioPlayer.src = audioUrl;
+                
+                // 清理旧URL（防止内存泄漏）
+                if (audioPlayer._prevAudioUrl) {
+                    URL.revokeObjectURL(audioPlayer._prevAudioUrl);
+                }
+                audioPlayer._prevAudioUrl = audioUrl;
+
+            } catch (e) {
+                console.error("生成音频失败:", e);
+                alert('生成失败：' + (e.message || "服务器连接问题"));
+            } finally {
+                isGeneratingTTS = false;
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-play-circle"></i> 开始生成';
+            }
+        }
+        
+        // 添加页面刷新监听
+        window.addEventListener('beforeunload', (e) => {
+            if (isGeneratingTTS) {
+                e.preventDefault();
+                e.returnValue = '语音生成尚未完成，确认要离开吗？';
+                return e.returnValue;
+            }
+        });
+    </script>
+</body>
+</html>
