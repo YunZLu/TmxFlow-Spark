@@ -17,15 +17,15 @@ NC='\033[0m'
 # 部署流程
 deploy() {
 
-# 颜色定义
-RED='\033[38;5;203m'      # 浅珊瑚红
-GREEN='\033[38;5;114m'    # 灰调青绿
-YELLOW='\033[38;5;228m'   # 香草奶油黄
-BLUE='\033[38;5;111m'     # 雾霾蓝
-CYAN='\033[38;5;122m'     # 浅湖蓝
-PURPLE='\033[38;5;183m'   # 薰衣草紫
-NC='\033[0m'
-
+    # 颜色定义(登录ubuntu重新配置)
+    RED='\033[38;5;203m'      # 浅珊瑚红
+    GREEN='\033[38;5;114m'    # 灰调青绿
+    YELLOW='\033[38;5;228m'   # 香草奶油黄
+    BLUE='\033[38;5;111m'     # 雾霾蓝
+    CYAN='\033[38;5;122m'     # 浅湖蓝
+    PURPLE='\033[38;5;183m'   # 薰衣草紫
+    NC='\033[0m'
+    
         # 添加termux上的Ubuntu/root软链接
         if [ ! -d "/data/data/com.termux/files/home/root" ]; then
             ln -s /data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/ubuntu/root /data/data/com.termux/files/home
@@ -86,28 +86,28 @@ NC='\033[0m'
         setup_python
 }
 
+# 启动界面
 show_menu() {
 
-# 颜色定义
-RED='\033[38;5;203m'      # 浅珊瑚红
-GREEN='\033[38;5;114m'    # 灰调青绿
-YELLOW='\033[38;5;228m'   # 香草奶油黄
-BLUE='\033[38;5;111m'     # 雾霾蓝
-CYAN='\033[38;5;122m'     # 浅湖蓝
-PURPLE='\033[38;5;183m'   # 薰衣草紫
-NC='\033[0m'
+    # 颜色定义(登录ubuntu重新配置)
+    RED='\033[38;5;203m'      # 浅珊瑚红
+    GREEN='\033[38;5;114m'    # 灰调青绿
+    YELLOW='\033[38;5;228m'   # 香草奶油黄
+    BLUE='\033[38;5;111m'     # 雾霾蓝
+    CYAN='\033[38;5;122m'     # 浅湖蓝
+    PURPLE='\033[38;5;183m'   # 薰衣草紫
+    NC='\033[0m'
 
-config_file="/root/TmxFlow-Spark/config.yaml"
+    config_file="/root/TmxFlow-Spark/config.yaml"
 
     while true; do
         clear
         cat /root/TmxFlow-Spark/TMX_logo.txt | lolcat 
         echo -e "${BLUE}\n════════════════════════════════════════════════════════════════════════════${NC}"
-
-echo -e "${GREEN}➤ 1. 启动应用程序            ${YELLOW}➤ 2. 查看当前配置${NC}"
-echo -e "${CYAN}➤ 3. 修改服务器地址/端口     ${PURPLE}➤ 4. 修改账户信息${NC}"
-echo -e "${RED}➤ 0. 退出系统${NC}"
-echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════${NC}"
+        echo -e "${GREEN}➤ 1. 启动应用程序            ${YELLOW}➤ 2. 查看当前配置${NC}"
+        echo -e "${CYAN}➤ 3. 修改服务器地址/端口     ${BLUE}➤ 4. 修改账户信息${NC}"
+        echo -e "${PURPLE}➤ 5. 更新应用程序            ${RED}➤ 0. 退出系统${NC}"
+        echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════${NC}"
         echo -e "${YELLOW}请选择操作 [0-4]:${NC}"
         read option
         
@@ -172,6 +172,13 @@ echo -e "${BLUE}═════════════════════�
                 echo -e "${YELLOW}按回车键返回主菜单...${NC}"
                 read
                 ;;
+            5)
+                echo -e "\n${CYAN}🔄 正在更新应用程序...${NC}"
+                cd /root/TmxFlow-Spark
+                git pull && echo -e "\n${GREEN}✅ 应用程序已更新${NC}\n"
+                echo -e "${YELLOW}按回车键返回主菜单...${NC}"
+                read
+                ;;
             0)
                 echo -e "\n${YELLOW}👋 正在退出系统...${NC}\n"
                 exit 0
@@ -183,7 +190,6 @@ echo -e "${BLUE}═════════════════════�
         esac
     done
 }
-
 # 环境检测
 if [ "$current_dir" = "$termux_home" ]; then
     echo -e "${CYAN}📱 检测到Termux环境，正在准备Ubuntu环境...${NC}"
