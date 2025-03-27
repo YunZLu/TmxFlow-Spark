@@ -42,6 +42,19 @@ def create_app(config):
     # 获取允许的参数列表，如果配置中没有则使用默认列表
     allowed_params = config.get('tts', {}).get('allowed_params', ['prompt_audio', 'prompt_text', 'text', 'text_file', 'gender', 'pitch', 'speed', 'emotion'])
     
+    # 在 create_app 函数内添加以下路由（建议放在现有 /api/config 路由附近）
+    
+    @app.route('/config', methods=['GET'])
+    def get_server_config():
+        """获取服务端基础配置（新增接口）"""
+        return jsonify({
+            "server": {
+                "host": config['local'].get('host', '127.0.0.1'),  # 从配置读取
+                "port": config['local']['port'],  # **核心修改：暴露端口号**
+                "api_base": "/api"  # 统一API前缀
+            },
+            "tts_endpoint": "/tts"  # TTS服务端点
+        })
     
     @app.route('/api/config', methods=['GET'])
     def get_config():
@@ -52,7 +65,8 @@ def create_app(config):
             'speed': [{'display': o['display'], 'value': o['value']} 
                     for o in frontend_config['speed']['options']],
             'emotion': [{'display': o['display'], 'value': o['value']} 
-                      for o in frontend_config['emotion']['options']]
+                      for o in frontend_config['emotion']['options']],
+            'server_config_url': '/config'  # 告知前端如何获取服务端配置
         }
         return jsonify(structured)
         
