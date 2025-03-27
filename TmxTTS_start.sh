@@ -70,9 +70,9 @@ NC='\033[0m'
         # 配置Python环境
         setup_python() {
             cd TmxFlow-Spark || exit 1
-            if [ ! -d "venv" ]; then
+            if [ ! -d "venv/bin/activate" ]; then
                 echo -e "${BLUE}🐍 正在创建虚拟环境...${NC}"
-                python3 -m venv venv
+                python3 -m venv venv || python -m venv venv
                 echo -e "${BLUE}📦 正在安装依赖...${NC}"
                 source venv/bin/activate
                 pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
@@ -116,8 +116,9 @@ echo -e "${BLUE}═════════════════════�
         case $option in
             1)
                 echo -e "\n${CYAN}🚀 正在启动应用...${NC}"
+                cd /root/TmxFlow-Spark
                 source venv/bin/activate
-                python main.py
+                python3 main.py || python main.py
                 deactivate
                 echo -e "${YELLOW}按回车键返回主菜单...${NC}"
                 read
