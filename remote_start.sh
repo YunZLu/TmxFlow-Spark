@@ -54,7 +54,7 @@ deploy_process() {
     )
     for file in "${!files[@]}"; do
         if [ ! -f "${files[$file]}" ]; then
-            wget -q "https://raw.githubusercontent.com/YunZLu/TmxFlow-Spark/main/RemoteFile/$file" -O "${files[$file]}"
+            wget --show-progress -q "https://gh-proxy.com/raw.githubusercontent.com/YunZLu/TmxFlow-Spark/main/RemoteFile/$file" -O "${files[$file]}"
         fi
     done
 
