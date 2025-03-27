@@ -322,21 +322,49 @@
         let isGeneratingTTS = false;
         const generateBtn = document.querySelector('button');
         let paramConfig = {};
-        const API_BASE_URL = 'http://127.0.0.1:8080';
+        let API_BASE_URL; // 移除了硬编码的端口
         
-        // 初始化配置
-        function initConfig() {
-            fetch(`${API_BASE_URL}/api/config`)
-                .then(res => res.json())
-                .then(config => {
-                    paramConfig = config;
-                    initDropdowns();
-                    initDisplayListeners();  // 新增显示监听
-                })
-                .catch(err => {
-                    console.error("获取配置失败:", err);
-                    alert("获取配置失败，请检查服务器连接");
+        // 异步初始化流程
+        async function initApp() {
+            try {
+                // 第一步：获取服务端基础配置
+                const serverConfig = await fetch('/config').then(res => {
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return res.json();
                 });
+                
+                // 动态构建API地址
+                API_BASE_URL = `http://${serverConfig.server.host}:${serverConfig.server.port}`;
+                const API_PREFIX = `${API_BASE_URL}${serverConfig.server.api_base}`;
+                
+                // 第二步：获取前端参数配置
+                const frontendConfig = await fetch(`${API_PREFIX}/config`).then(res => {
+                    if (!res.ok) throw new Error('前端配置获取失败');
+                    return res.json();
+                });
+                
+                paramConfig = frontendConfig;
+                
+                // 初始化UI组件
+                initDropdowns();
+                initDisplayListeners();
+                
+                // 启用生成按钮
+                generateBtn.disabled = false;
+                
+            } catch (error) {
+                console.error("初始化失败:", error);
+                alert(`系统初始化失败: ${error.message}`);
+                generateBtn.disabled = true;
+            }
+        }
+    
+        // 修改后的初始化调用
+        initApp();
+    
+        // 后续的API调用示例（需要统一使用API_PREFIX）
+        function fetchFiles(fileType) {
+            return fetch(`${API_PREFIX}/files/${fileType}`);
         }
         
         // 统一初始化入口
