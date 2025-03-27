@@ -10,11 +10,16 @@ fi
 deploy_process() {
 
     # 检查必要工具
-    for pkg in ssh git unzip; do
+    for pkg in git unzip; do
         if ! command -v $pkg &> /dev/null; then
             apt update && apt install -y $pkg
         fi
     done
+
+    # 安装ssh
+    if [ ! -f "/etc/init.d/ssh" ]; then
+        apt update && apt install -y ssh
+    fi
 
     # 克隆仓库
     if [ ! -d "/Spark-TTS" ]; then
