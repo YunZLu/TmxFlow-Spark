@@ -38,7 +38,7 @@ NC='\033[0m'
         check_deps() {
              local missing=()
              [ ! -x "$(command -v git)" ] && missing+=("git")
-	         [ ! -x "$(command -v python3)" ] ||&& missing+=("python=3")
+	         [ ! -x "$(command -v python3)" ] && missing+=("python=3")
              [ ! -x "$(command -v yq)" ] && missing+=("yq")
              [ ! -x "$(command -v lolcat)" ] && missing+=("lolcat")
              dpkg -l python3-venv | grep ^ii || missing+=("python3-venv")
