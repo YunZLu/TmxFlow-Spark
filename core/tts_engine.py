@@ -71,14 +71,19 @@ class TTSEngine:
         """
         cmd = f"cd {self.config['tts']['workdir']}; {self.ssh.remote_python_path} {self.config['tts']['command']}"
         
-        for key, value in params.items():
+        # 优先处理 'text' 和 'prompt_text' 参数
+        priority_params = ['text']
+        for key in priority_params:
+            value = params.get(key)
             if value:
-                # 确保文本参数用引号包裹
-                if key in ['text', 'prompt_text']:
-                    cmd += f' --{key} "{value}"'
-                # 特殊处理prompt_audio参数
-                elif key == 'prompt_audio':
-                    # value此时应该已经是完整的相对路径（包含正确的扩展名）
+                cmd += f' --{key} "{value}"'
+        
+        # 处理其他参数，排除已处理的优先级参数
+        for key, value in params.items():
+            if key in priority_params:
+                continue
+            if value:
+                if key == 'prompt_audio' or key == 'prompt_text':
                     cmd += f' --{key} "{value}"'
                 else:
                     cmd += f' --{key} {value}'
