@@ -81,6 +81,7 @@ def main():
         logger.info(f"Spark-TTS反代理服务启动成功！")
         logger.info(f"本地访问: http://127.0.0.1:{port}")
         logger.info(f"示例请求: http://127.0.0.1:{port}/tts?text=欢迎使用TmxFlow-Spark项目&gender=female")
+        logger.info(f"输入Ctrl+C，退出应用")
         
         # 使用 run_simple 启动应用
         run_simple(host, port, app, use_reloader=False, threaded=True)
