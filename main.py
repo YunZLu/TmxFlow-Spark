@@ -5,7 +5,7 @@ from core.logger import setup_logger
 from core.ssh_manager import SSHManager
 from core.sync_manager import FileSynchronizer
 from api.routes import create_app
-from utils.helpers import get_local_ip,load_config
+from utils.helpers import load_config
 
 # 欢迎页面
 def show_welcome():
@@ -75,15 +75,15 @@ def main():
         app = create_app(config)
         
         # 启动服务
+        host = config['local']['host']
         port = config['local']['port']
-        local_ip = get_local_ip()
         
         logger.info(f"Spark-TTS反代理服务启动成功！")
         logger.info(f"本地访问: http://127.0.0.1:{port}")
         logger.info(f"示例请求: http://127.0.0.1:{port}/tts?text=欢迎使用TmxFlow-Spark项目&gender=female")
         
         # 使用 run_simple 启动应用
-        run_simple('0.0.0.0', port, app, use_reloader=False, threaded=True)
+        run_simple(host, port, app, use_reloader=False, threaded=True)
         
     except Exception as e:
         logger.critical(f"服务启动失败: {e}")
