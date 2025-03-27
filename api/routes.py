@@ -195,6 +195,45 @@ def create_app(config):
             "allowed_params": allowed_params
         }
     
+    @app.route('/api/cache', methods=['DELETE'])
+    def delete_recent_cache():
+        """删除最近生成的缓存文件"""
+        try:
+            cache_dir = config['local'].get('cache_dir', './cache_dir')
+            
+            if not os.path.exists(cache_dir):
+                return jsonify({"error": "缓存目录不存在", "deleted_file": None}), 404  # 明确返回null
+                
+            files = [(f, os.path.getmtime(os.path.join(cache_dir, f))) 
+                    for f in os.listdir(cache_dir) 
+                    if os.path.isfile(os.path.join(cache_dir, f))]
+                    
+            if not files:
+                # 返回标准数据结构，用 deleted_file: null 表示无删除操作
+                return jsonify({
+                    "message": "没有可删除的音频文件",
+                    "deleted_file": None  # 明确标识无文件被删除
+                }), 200
+                
+            files.sort(key=lambda x: x[1], reverse=True)
+            recent_file = files[0][0]
+            file_path = os.path.join(cache_dir, recent_file)
+            
+            os.remove(file_path)
+            logger.info(f"已删除音频文件: {recent_file}")
+            
+            return jsonify({
+                "message": "删除成功",
+                "deleted_file": recent_file  # 正常情况返回文件名
+            }), 200
+            
+        except PermissionError:
+            logger.error("删除文件权限不足")
+            return jsonify({"error": "权限不足", "deleted_file": None}), 403
+        except Exception as e:
+            logger.error(f"删除失败: {str(e)}")
+            return jsonify({"error": str(e), "deleted_file": None}), 500
+        
     @app.errorhandler(400)
     def bad_request(e):
         return {"error": str(e)}, 400
