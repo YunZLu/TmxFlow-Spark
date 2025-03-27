@@ -1,28 +1,23 @@
 # 本地服务配置
 local:
+  host: 127.0.0.1
   port: 5000
   cache_dir: cache
   max_concurrent: 1
-  local_prompt_audio_path: prompt_audio  # 本地提示音频文件夹路径
-  local_prompt_text_path: prompt_text  # 本地提示文本文件夹路径
-  local_text_file_path: text_file  # 本地生成语音文本文件夹路径
-  
-  
-# SSH连接配置
+  local_prompt_audio_path: prompt_audio
+  local_prompt_text_path: prompt_text
+  local_text_file_path: text_file
 ssh:
-  host: 
-  port: 
-  username: 
-  password: 
-
-# TTS服务配置
+  host:
+  port:
+  username:
+  password:
 tts:
   workdir: /Spark-TTS/cli
   command: tts_cli.py
-  remote_prompt_audio_path: prompt_audio  # 远程提示音频文件夹路径
-  remote_text_file_path: text_flie # 远程生成语音文本文件夹路径
+  remote_prompt_audio_path: prompt_audio
+  remote_text_file_path: text_flie
   conda_env: sparktts
-  # TTS参数白名单
   allowed_params:
     - prompt_audio
     - prompt_text
@@ -33,125 +28,126 @@ tts:
     - emotion
     - speed
     - seed
-
 frontend_config:
   pitch:
     options:
-      - display: "低声调"
-        value: "very_low"
+      - display: 低声调
+        value: very_low
         order: 1
-      - display: "稍低音调"
-        value: "low"
+      - display: 稍低音调
+        value: low
         order: 2
-      - display: "正常音调"
-        value: "moderate"
+      - display: 正常音调
+        value: moderate
         order: 3
-      - display: "稍高音调"
-        value: "high"
+      - display: 稍高音调
+        value: high
         order: 4
-      - display: "高音调"
-        value: "very_high"
+      - display: 高音调
+        value: very_high
         order: 5
-
   speed:
     options:
-      - display: "很慢"
-        value: "very_low"
+      - display: 很慢
+        value: very_low
         order: 1
-      - display: "稍慢"
-        value: "low"
+      - display: 稍慢
+        value: low
         order: 2
-      - display: "正常"
-        value: "moderate"
+      - display: 正常
+        value: moderate
         order: 3
-      - display: "稍快"
-        value: "high"
+      - display: 稍快
+        value: high
         order: 4
-      - display: "很快"
-        value: "very_high"
+      - display: 很快
+        value: very_high
         order: 5
-
   emotion:
     options:
-      - display: "未知"
-        value: "UNKNOWN"
+      - display: 未知
+        value: UNKNOWN
         order: 1
-      - display: "中性"
-        value: "NEUTRAL"
+      - display: 中性
+        value: NEUTRAL
         order: 2
-      - display: "生气"
-        value: "ANGRY"
+      - display: 生气
+        value: ANGRY
         order: 3
-      - display: "开心"
-        value: "HAPPY"
+      - display: 开心
+        value: HAPPY
         order: 4
-      - display: "伤心"
-        value: "SAD"
+      - display: 伤心
+        value: SAD
         order: 5
-      - display: "害怕"
-        value: "FEARFUL"
+      - display: 害怕
+        value: FEARFUL
         order: 6
-      - display: "厌恶"
-        value: "DISGUSTED"
+      - display: 厌恶
+        value: DISGUSTED
         order: 7
-      - display: "惊讶"
-        value: "SURPRISED"
+      - display: 惊讶
+        value: SURPRISED
         order: 8
-      - display: "嘲讽"
-        value: "SARCASTIC"
+      - display: 嘲讽
+        value: SARCASTIC
         order: 9
-      - display: "兴奋"
-        value: "EXCITED"
+      - display: 兴奋
+        value: EXCITED
         order: 10
-      - display: "困倦"
-        value: "SLEEPY"
+      - display: 困倦
+        value: SLEEPY
         order: 11
-      - display: "困惑"
-        value: "CONFUSED"
+      - display: 困惑
+        value: CONFUSED
         order: 12
-      - display: "强调"
-        value: "EMPHASIS"
+      - display: 强调
+        value: EMPHASIS
         order: 13
-      - display: "大笑"
-        value: "LAUGHING"
+      - display: 大笑
+        value: LAUGHING
         order: 14
-      - display: "唱歌"
-        value: "SINGING"
+      - display: 唱歌
+        value: SINGING
         order: 15
-      - display: "担忧"
-        value: "WORRIED"
+      - display: 担忧
+        value: WORRIED
         order: 16
-      - display: "耳语"
-        value: "WHISPER"
+      - display: 耳语
+        value: WHISPER
         order: 17
-      - display: "焦虑"
-        value: "ANXIOUS"
+      - display: 焦虑
+        value: ANXIOUS
         order: 18
-      - display: "不认同"
-        value: "NO-AGREEMENT"
+      - display: 不认同
+        value: NO-AGREEMENT
         order: 19
-      - display: "抱歉"
-        value: "APOLOGETIC"
+      - display: 抱歉
+        value: APOLOGETIC
         order: 20
-      - display: "关切"
-        value: "CONCERNED"
+      - display: 关切
+        value: CONCERNED
         order: 21
-      - display: "咬字清晰"
-        value: "ENUNCIATED"
+      - display: 咬字清晰
+        value: ENUNCIATED
         order: 22
-      - display: "坚定自信"
-        value: "ASSERTIVE"
+      - display: 坚定自信
+        value: ASSERTIVE
         order: 23
-      - display: "鼓励"
-        value: "ENCOURAGING"
+      - display: 鼓励
+        value: ENCOURAGING
         order: 24
-      - display: "轻蔑"
-        value: "CONTEMPT"
+      - display: 轻蔑
+        value: CONTEMPT
         order: 25
-
-
 cors:
-  origins: "*"
-  methods: ["GET", "POST", "PUT"]
-  allow_headers: ["Content-Type", "Authorization"]
+  origins: '*'
+  methods:
+    - GET
+    - POST
+    - PUT
+  allow_headers:
+    - Content-Type
+    - Authorization
   max_age: 86400
+username: root
