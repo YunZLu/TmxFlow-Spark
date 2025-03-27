@@ -50,8 +50,7 @@ def main():
         # 创建SSH连接
         ssh_client = SSHManager(config)
         if not ssh_client.connect():
-            logger.critical("无法连接到远程服务器，服务无法启动")
-            exit(1)
+            logger.critical("无法连接到远程服务器，可查看本地缓存语音")
         
         # 同步提示音频文件
         audio_sync = FileSynchronizer(
