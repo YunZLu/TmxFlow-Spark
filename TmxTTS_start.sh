@@ -1,76 +1,84 @@
 #!/bin/bash
-
+# 定义Ubuntu的安装目录路径
+UBUNTU_DIR="/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/ubuntu"
 termux_home="/data/data/com.termux/files/home"
 current_dir=$(pwd)
-config_file="TmxFlow-Spark/config.yaml"
+config_file="/root/TmxFlow-Spark/config.yaml"
 
 # 颜色定义
-RED='\033[31m'
-GREEN='\033[32m'
-YELLOW='\033[33m'
-BLUE='\033[34m'
-CYAN='\033[36m'
+RED='\033[38;5;203m'      # 浅珊瑚红
+GREEN='\033[38;5;114m'    # 灰调青绿
+YELLOW='\033[38;5;228m'   # 香草奶油黄
+BLUE='\033[38;5;111m'     # 雾霾蓝
+CYAN='\033[38;5;122m'     # 浅湖蓝
+PURPLE='\033[38;5;183m'   # 薰衣草紫
 NC='\033[0m'
 
 # 部署流程
-auto_deploy() {
-    # Termux环境处理
-    if [ "$current_dir" = "$termux_home" ]; then
-        echo -e "${CYAN}[+] 检测到Termux环境${NC}"
-        
-        # 检查Ubuntu发行版
-        if ! command -v proot-distro; then
-            echo -e "${YELLOW}[!] 正在安装Ubuntu...${NC}"
-            pkg update -y && pkg install proot-distro -y
-            proot-distro install ubuntu
-        fi
+deploy() {
 
-        # 进入Ubuntu继续执行
-        echo -e "${CYAN}[→] 进入Ubuntu环境...${NC}"
-        proot-distro login ubuntu -- bash -c "cd ~ && curl -sL https://raw.githubusercontent.com/YunZLu/TmxFlow-Spark/refs/heads/main/TmxTTS_start.sh | bash"
-        exit 0
-    else
+# 颜色定义
+RED='\033[38;5;203m'      # 浅珊瑚红
+GREEN='\033[38;5;114m'    # 灰调青绿
+YELLOW='\033[38;5;228m'   # 香草奶油黄
+BLUE='\033[38;5;111m'     # 雾霾蓝
+CYAN='\033[38;5;122m'     # 浅湖蓝
+PURPLE='\033[38;5;183m'   # 薰衣草紫
+NC='\033[0m'
+
+        # 添加termux上的Ubuntu/root软链接
+        if [ ! -d "/data/data/com.termux/files/home/root" ]; then
+            ln -s /data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/ubuntu/root /data/data/com.termux/files/home
+        fi
+        
         # Ubuntu环境处理
-        echo -e "${CYAN}[+] 正在检测系统环境...${NC}"
+        echo -e "\n${BLUE}🌐 正在检测系统环境...${NC}"
         
         # 基础依赖检查
-  check_deps() {
-       local missing=()
-       [ ! -x "$(command -v git)" ] && missing+=("git")
-       [ ! -x "$(command -v python3)" ] && missing+=("python3")
-       if ! python3 -c "import venv" &>/dev/null; then
-           missing+=("python3-venv")
-       fi
-       
-       if [ ${#missing[@]} -gt 0 ]; then
-           echo -e "${YELLOW}[!] 缺少依赖: ${missing[*]}${NC}"
-           bash -s < <(curl -sSL https://linuxmirrors.cn/main.sh)
-           apt update -y && apt install -y ${missing[@]}
-       fi
-   }
+        check_deps() {
+             local missing=()
+             [ ! -x "$(command -v git)" ] && missing+=("git")
+             [ ! -x "$(command -v python3)" ] && missing+=("python=3")
+             [ ! -x "$(command -v yq)" ] && missing+=("yq")
+             [ ! -x "$(command -v lolcat)" ] && missing+=("lolcat")
+             if ! python3 -c "import venv" &>/dev/null; then
+                  missing+=("python3-venv")
+             fi
+               
+             # 安装依赖
+             if [ ${#missing[@]} -gt 0 ]; then
+                   echo -e "${YELLOW}⚠️ 缺少依赖: ${missing[*]}${NC}"
+                   echo -e "${BLUE}🛠️ 正在配置镜像源并安装依赖...${NC}"
+                   bash -s < <(curl -sSL https://linuxmirrors.cn/main.sh)
+                   apt update -y && apt install -y ${missing[@]}
+             fi
+           }
         
         # 克隆仓库
         check_repo() {
-            if [ ! -d "TmxFlow-Spark" ]; then
-                echo -e "${YELLOW}[!] 正在克隆仓库...${NC}"
+            if [ ! -d "/root/TmxFlow-Spark" ]; then
+                echo -e "${YELLOW}⏬ 正在克隆仓库...${NC}"
+                cd /root
                 git clone https://github.com/YunZLu/TmxFlow-Spark.git || {
-                    echo -e "${RED}[!] 仓库克隆失败!${NC}"
+                    echo -e "${RED}❌ 仓库克隆失败!${NC}"
                     exit 1
                 }
+                echo -e "${GREEN}✅ 仓库克隆成功!${NC}"
             fi
         }
 
-        # 准备Python环境
+        # 配置Python环境
         setup_python() {
             cd TmxFlow-Spark || exit 1
             if [ ! -d "venv" ]; then
-                echo -e "${YELLOW}[!] 正在创建虚拟环境...${NC}"
+                echo -e "${BLUE}🐍 正在创建虚拟环境...${NC}"
                 python3 -m venv venv
-                echo -e "${YELLOW}[!] 正在安装依赖...${NC}"
+                echo -e "${BLUE}📦 正在安装依赖...${NC}"
                 source venv/bin/activate
                 pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
                 pip install -r requirements.txt
                 deactivate
+                echo -e "${GREEN}✅ 环境配置完成!${NC}"
             fi
         }
 
@@ -78,67 +86,126 @@ auto_deploy() {
         check_deps
         check_repo
         setup_python
-    fi
 }
 
-# 启动界面
 show_menu() {
+
+# 颜色定义
+RED='\033[38;5;203m'      # 浅珊瑚红
+GREEN='\033[38;5;114m'    # 灰调青绿
+YELLOW='\033[38;5;228m'   # 香草奶油黄
+BLUE='\033[38;5;111m'     # 雾霾蓝
+CYAN='\033[38;5;122m'     # 浅湖蓝
+PURPLE='\033[38;5;183m'   # 薰衣草紫
+NC='\033[0m'
+
+config_file="/root/TmxFlow-Spark/config.yaml"
+
     while true; do
         clear
-        echo -e "${BLUE}========================================${NC}"
-        echo -e "${BLUE}|      ${GREEN}TMXFLOW-SPARK 控制中心${BLUE}      |${NC}"
-        echo -e "${BLUE}========================================${NC}"
-        echo -e "${GREEN}1. 启动应用程序${NC}"
-        echo -e "${YELLOW}2. 修改服务器地址/端口${NC}"
-        echo -e "${YELLOW}3. 修改用户名和密码${NC}"
-        echo -e "${RED}0. 退出${NC}"
-        echo -e "${BLUE}========================================${NC}"
-        read -p "请输入选项: " option
+        cat /root/TmxFlow-Spark/TMX_logo.txt | lolcat 
+        echo -e "${BLUE}\n════════════════════════════════════════════════════════════════════════════${NC}"
+
+echo -e "${GREEN}➤ 1. 启动应用程序            ${YELLOW}➤ 2. 查看当前配置${NC}"
+echo -e "${CYAN}➤ 3. 修改服务器地址/端口     ${PURPLE}➤ 4. 修改账户信息${NC}"
+echo -e "${RED}➤ 0. 退出系统${NC}"
+echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════${NC}"
+        echo -e "${YELLOW}请选择操作 [0-4]:${NC}"
+        read option
         
         case $option in
             1)
-                echo -e "${CYAN}[→] 正在启动应用...${NC}"
+                echo -e "\n${CYAN}🚀 正在启动应用...${NC}"
                 source venv/bin/activate
                 python main.py
                 deactivate
-                read -p "按回车键返回菜单..."
+                echo -e "${YELLOW}按回车键返回主菜单...${NC}"
+                read
                 ;;
             2)
-                read -p "请输入新的服务器地址: " ssh_input
+                echo -e "\n${GREEN}🔍 当前服务器配置信息：${NC}"
+                yq '.ssh' "$config_file"
+                echo -e "${YELLOW}按回车键返回主菜单...${NC}"
+                read
+                ;;
+            3)
+                echo -e "\n${YELLOW}🛠️ 请输入服务器地址（格式 host:port 或 tcp://host:port）"
+                echo -e "示例：tcp://18.tcp.cpolar.top:12345${NC}"
+                read -p "» " ssh_input
+
                 ssh_input=${ssh_input#tcp://}
+                
+                if [[ ! "$ssh_input" =~ ^[^:]+:[0-9]+$ ]]; then
+                    echo -e "${RED}❌ 输入格式无效！请使用 host:port 格式${NC}"
+                    sleep 2
+                    continue
+                fi
+                
                 host=${ssh_input%:*}
                 port=${ssh_input##*:}
                 
-                sed -i "s/  host: .*/  host: $host/" $config_file
-                sed -i "s/  port: .*/  port: $port/" $config_file
-                echo -e "${GREEN}[√] 服务器地址已更新！${NC}"
-                sleep 1
-                ;;
-            3)
-                read -p "请输入新的用户名: " username
-                read -sp "请输入新的密码: " password
-                echo
+                yq -y --arg host "$host" --arg port "$port" '.ssh.host = $host | .ssh.port = $port' "$config_file" -i
                 
-                sed -i "s/  username: .*/  username: $username/" $config_file
-                sed -i "s/  password: .*/  password: $password/" $config_file
-                echo -e "${GREEN}[√] 认证信息已更新！${NC}"
-                sleep 1
+                if [ $? -eq 0 ]; then
+                    echo -e "${GREEN}✅ 配置更新成功！当前配置：${NC}"
+                    yq '.ssh' "$config_file"
+                else
+                    echo -e "${RED}❌ 配置更新失败，请检查文件权限！${NC}"
+                fi
+                echo -e "${YELLOW}按回车键返回主菜单...${NC}"
+                read
+                ;;
+            4)
+                echo -e "\n${YELLOW}🔑 账户信息修改\n"
+                echo -e "请输入新的用户名:${NC}"
+                read  username
+                echo -e "\n${YELLOW}请输入新的密码:${NC}"
+                read password
+                
+                yq -y --arg username "$username" --arg password "$password" '.username = $username | .ssh.password = $password' "$config_file" -i
+                
+                if [ $? -eq 0 ]; then
+                    echo -e "\n${GREEN}✅ 账户信息已更新！当前配置${NC}"
+                    yq '.ssh' "$config_file"
+                else
+                    echo -e "${RED}❌ 更新失败，请检查配置文件！${NC}"
+                fi
+                echo -e "${YELLOW}按回车键返回主菜单...${NC}"
+                read
                 ;;
             0)
-                echo -e "${RED}[!] 退出系统...${NC}"
+                echo -e "\n${YELLOW}👋 正在退出系统...${NC}\n"
                 exit 0
                 ;;
             *)
-                echo -e "${RED}[!] 无效选项，请重新输入！${NC}"
+                echo -e "${RED}⚠️ 无效选项，请重新输入！${NC}"
                 sleep 1
                 ;;
         esac
     done
 }
 
-# 全自动流程
-{
-    auto_deploy    # 执行自动部署
-    cd TmxFlow-Spark 2>/dev/null || exit 1
-    show_menu      # 进入控制菜单
-}
+# 环境检测
+if [ "$current_dir" = "$termux_home" ]; then
+    echo -e "${CYAN}📱 检测到Termux环境，正在准备Ubuntu环境...${NC}"
+    
+    if [ ! -d "$UBUNTU_DIR" ]; then
+        echo -e "${YELLOW}⚠️ 未检测到Ubuntu子系统，正在安装...${NC}"
+        
+        if ! command -v proot-distro; then
+            echo -e "${BLUE}🛠️ 正在安装proot-distro...${NC}"
+            pkg update -y && pkg install proot-distro -y
+        fi
+        
+        proot-distro install ubuntu -y
+    fi
+    proot-distro login ubuntu -- bash -c "
+        $(declare -f deploy show_menu)
+        deploy
+        show_menu
+    "
+else
+    echo -e "${CYAN}🖥️ 检测到Ubuntu环境，开始部署...${NC}"
+    deploy
+    show_menu
+fi
