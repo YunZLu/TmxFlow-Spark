@@ -64,7 +64,10 @@ deploy_process() {
         wget --show-progress -q -O "cpolar.zip" "https://www.cpolar.com/static/downloads/releases/3.3.18/cpolar-stable-linux-amd64.zip"
         unzip -o cpolar.zip
         chmod +x cpolar
-        read -p "请输入cpolar token: " token
+        token=""
+        while [ -z "$token" ]; do  # 当token为空时循环
+            read -p "请输入cpolar token: " token
+        done
         ./cpolar authtoken "$token"
     fi
 
