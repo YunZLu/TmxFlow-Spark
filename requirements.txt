@@ -1,5 +1,2 @@
-paramiko
 flask
-pyyaml
-flask-cors
-cachetools
+httpx
