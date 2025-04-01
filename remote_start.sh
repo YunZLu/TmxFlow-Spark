@@ -53,14 +53,16 @@ deploy_process() {
     echo -e "${CYAN}⚡ 依赖检查中..."${RESET}
     cd /Fast-Spark-TTS
     REQUIREMENTS_FILE="requirements.txt"
-    # 预加载已安装包列表
-    mapfile -t INSTALLED < <(pip list --format=freeze | cut -d= -f1)
-
+    # 生成已安装包列表（全部转小写）
+    mapfile -t INSTALLED < <(pip freeze | cut -d= -f1 | tr '[:upper:]' '[:lower:]')
+    
     PIP_OPTS="--root-user-action=ignore"
-    # 批量处理依赖
     TO_INSTALL=()
+    
+    # 处理依赖文件
     while read -r line; do
-        pkg_name=$(sed -E 's/[[:space:]]*([^!=<>=]+).*/\1/' <<< "$line")
+        # 提取包名并转小写（兼容版本号、空格等）
+        pkg_name=$(echo "$line" | sed -E 's/[[:space:]]*([^!=<>=]+).*/\1/' | tr '[:upper:]' '[:lower:]')
         if printf '%s\n' "${INSTALLED[@]}" | grep -qxF "$pkg_name"; then
             echo -e "${CYAN}✔️  ${pkg_name}${RESET}"
         else
@@ -69,9 +71,9 @@ deploy_process() {
         fi
     done < <(grep -vE '^\s*$|^\s*#' "$REQUIREMENTS_FILE")
     
-    # 批量安装
+    # 安装缺失依赖
     if [ ${#TO_INSTALL[@]} -gt 0 ]; then
-        echo -e "\n${BLUE}🚀 批量安装缺失依赖..."${RESET}
+        echo -e "\n${BLUE}🚀 批量安装缺失依赖...${RESET}"
         pip install $PIP_OPTS sympy==1.13.1
         pip install $PIP_OPTS -U "${TO_INSTALL[@]}"
     else
