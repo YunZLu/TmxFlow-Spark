@@ -51,7 +51,7 @@ deploy_process() {
 
     # 批量依赖检查安装
     echo -e "${CYAN}⚡ 依赖检查中..."${RESET}
-    
+    cd /Fast-Spark-TTS
     # 预加载已安装包列表
     mapfile -t INSTALLED < <(pip list --format=freeze | cut -d= -f1)
 
