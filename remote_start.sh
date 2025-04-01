@@ -23,7 +23,7 @@ deploy_process() {
 
     # 检查必要工具
     echo -e "\n${BLUE}🔍 检查系统必要工具...${RESET}"
-    for pkg in ssh git unzip; do
+    for pkg in git unzip; do
         if ! command -v $pkg &> /dev/null; then
             echo -e "${YELLOW}⚠️  未找到 $pkg，正在安装...${RESET}"
             apt update -qq && apt install -y $pkg
@@ -32,6 +32,11 @@ deploy_process() {
             echo -e "${CYAN}✔️  $pkg 已安装${RESET}"
         fi
     done
+    
+    # 安装ssh
+    if [ ! -f "/etc/init.d/ssh" ]; then
+        apt update && apt install -y ssh
+    fi
 
     # 克隆仓库
     echo -e "\n${BLUE}📂 克隆项目仓库...${RESET}"
