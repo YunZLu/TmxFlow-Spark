@@ -1,4 +1,4 @@
-from core.logger import setup_logger
+from logger import setup_logger
 import os
 import hashlib
 import struct
