@@ -38,6 +38,8 @@ deploy() {
         check_deps() {
              local missing=()
              [ ! -x "$(command -v git)" ] && missing+=("git")
+             [ ! -x "$(command -v sshpass)" ] && missing+=("sshpass")
+             [ ! -x "$(command -v rsync)" ] && missing+=("rsync")
 	         [ ! -x "$(command -v python3)" ] && missing+=("python=3")
              [ ! -x "$(command -v yq)" ] && missing+=("yq")
              [ ! -x "$(command -v lolcat)" ] && missing+=("lolcat")
@@ -104,7 +106,7 @@ show_menu() {
         clear
         cat /root/TmxFlow-Spark/TMX_logo.txt | lolcat 
         echo -e "${BLUE}\n════════════════════════════════════════════════════════════════════════════${NC}"
-        echo -e "${GREEN}➤ 1. 启动应用程序            ${YELLOW}➤ 2. 查看当前配置${NC}"
+        echo -e "${GREEN}➤ 1. 启动应用程序            ${YELLOW}➤ 2. 快速远程登录${NC}"
         echo -e "${CYAN}➤ 3. 修改服务器地址/端口     ${BLUE}➤ 4. 修改账户信息${NC}"
         echo -e "${PURPLE}➤ 5. 更新应用程序            ${RED}➤ 0. 退出系统${NC}"
         echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════${NC}"
@@ -113,6 +115,138 @@ show_menu() {
         
         case $option in
             1)
+                CONFIG_FILE="config.yaml"
+                # 从YAML读取配置 🔄
+                echo -n "🔍 解析配置文件..."
+                HOST=$(yq -r '.ssh.host' $CONFIG_FILE 2>/dev/null)
+                PORT=$(yq -r '.ssh.port' $CONFIG_FILE 2>/dev/null)
+                USER=$(yq -r '.ssh.username' $CONFIG_FILE 2>/dev/null)
+                PASSWORD=$(yq -r '.ssh.password' $CONFIG_FILE 2>/dev/null)
+                SERVER="$USER@$HOST"
+                
+                # 调试信息 🔄
+                echo -e "\n${YELLOW}=== 🛠️ 调试信息 ===${NC}"
+                echo "🏷️ HOST: $HOST"
+                echo "🔌 PORT: $PORT"
+                echo "👤 USER: $USER"
+                echo "🖥️ SERVER: $SERVER"
+                
+                # 状态检查函数 🔄
+                check_status() {
+                  if [ $? -eq 0 ]; then
+                    echo -e "${GREEN}✅ 成功${NC}"
+                  else
+                    echo -e "${RED}❌ 失败${NC}"
+                    exit 1
+                  fi
+                }
+                
+                # 2. 远程启动服务 🔄
+                echo -e "\n${YELLOW}=== 🚀 远程服务启动 ===${NC}"
+                ssh-keygen -R "[$HOST]:$PORT"
+                
+                # 文件同步模块 🔄
+                echo -e "\n${YELLOW}=== 📂 开始文件同步 ===${NC}"
+                
+                sync_roles() {
+                  REMOTE_PATH="/Fast-Spark-TTS/data/roles/"
+                  LOCAL_PATH="./data/roles/"
+                
+                  mkdir -p ${LOCAL_PATH}
+                
+                  echo -n "🔄 同步角色文件..."
+                  if [ -z "$(ls -A ${LOCAL_PATH})" ]; then
+                    sshpass -p "$PASSWORD" rsync -avz --progress \
+                      -e "ssh -p $PORT -o StrictHostKeyChecking=no" \
+                      ${USER}@${HOST}:${REMOTE_PATH} ${LOCAL_PATH}
+                  else
+                    sshpass -p "$PASSWORD" rsync -avz --progress --delete \
+                      -e "ssh -p $PORT -o StrictHostKeyChecking=no" \
+                      ${LOCAL_PATH} ${USER}@${HOST}:${REMOTE_PATH}
+                  fi
+                  check_status
+                }
+                sync_roles
+                
+                sshpass -p "$PASSWORD" ssh -p $PORT -T -o StrictHostKeyChecking=no $USER@$HOST <<'ENDSSH'
+                # 清理旧进程 🔄
+                echo "🛑 正在停止旧服务..."
+                pkill -f "python" && echo "✅ 已停止所有Python进程" || echo "ℹ️ 没有Python进程在运行"
+                sleep 1
+                
+                # 清理旧日志
+                mv ~/server.log ~/server.log.bak 2>/dev/null
+                
+                # 启动新服务 🔄
+                cd /Fast-Spark-TTS/
+                echo "🚀 启动 server.py..."
+                nohup /root/miniconda3/bin/python server.py --model_path Spark-TTS-0.5B --backend vllm --llm_device cuda --tokenizer_device cuda --detokenizer_device cuda --wav2vec_attn_implementation sdpa --llm_attn_implementation sdpa --torch_dtype "bfloat16" --max_length 32768 --llm_gpu_memory_utilization 0.6 --host 0.0.0.0 --port 8000 > ~/server.log 2>&1 &
+                
+                echo "🌐 启动 frontend.py..."
+                nohup /root/miniconda3/bin/python frontend.py --backend_url http://127.0.0.1:8000 --host 0.0.0.0 --port 8001 > ~/frontend.log 2>&1 &
+                
+                # 服务状态检查 🔄
+                echo "⏳ 等待后端服务初始化（请耐心等待三分钟）..."
+                timeout=180
+                start_time=$(date +%s)
+                while true; do
+                  if grep -q "Warmup complete" ~/server.log; then
+                    echo -e "${GREEN}🎉 后端服务已准备就绪${NC}"
+                    break
+                  fi
+                  current_time=$(date +%s)
+                  if (( current_time - start_time >= timeout )); then
+                    echo -e "${RED}⏰ 后端服务启动超时，请检查 ~/server.log${NC}"
+                    exit 1
+                  fi
+                  sleep 5
+                done
+                
+                if pgrep -f "frontend.py" >/dev/null; then
+                  echo -e "${GREEN}🌍 前端服务已准备就绪${NC}"
+                else
+                  echo -e "${RED}❌ 前端服务启动失败，请检查 ~/server.log${NC}"
+                  exit 1
+                fi
+ENDSSH
+                check_status
+                
+                # 3. 建立本地隧道 🔄
+                echo -e "\n${YELLOW}=== 🔗 本地隧道建立 ===${NC}"
+                
+                establish_tunnel() {
+                  echo -n "🛰️ 建立隧道 $1..."
+                  sshpass -p "$PASSWORD" ssh -L $1:localhost:$1 -p $PORT -fNq $SERVER
+                  if ps aux | grep -q "[s]sh -L $1"; then
+                    echo -e "${GREEN}✅ 成功${NC}"
+                  else
+                    echo -e "${RED}❌ 失败${NC}"
+                  fi
+                }
+                
+                establish_tunnel 8000
+                establish_tunnel 8001
+                
+                # 4. 最终验证 🔄
+                echo -e "\n${YELLOW}=== 🧪 最终验证 ===${NC}"
+                
+                check_port() {
+                  echo -n "🔍 测试端口 $1..."
+                  if curl -Ism 2 http://localhost:$1 >/dev/null; then
+                    echo -e "${GREEN}✅ 活跃${NC}"
+                  else
+                    echo -e "${YELLOW}⚠️ 未响应${NC}"
+                  fi
+                }
+                
+                echo -e "\n🔧 后端服务状态："
+                check_port 8000
+                echo -e "\n🖥️ 前端服务状态："
+                check_port 8001
+                
+                echo -e "\n🚨 访问测试："
+                echo -e "${GREEN}🔧 后端服务：${NC}curl -I http://localhost:8000"
+                echo -e "${GREEN}🌐 前端界面：${NC}打开浏览器访问 http://localhost:8001"
                 echo -e "\n${CYAN}🚀 正在启动应用...${NC}"
                 cd /root/TmxFlow-Spark
                 source venv/bin/activate
@@ -122,8 +256,33 @@ show_menu() {
                 read
                 ;;
             2)
-                echo -e "\n${GREEN}🔍 当前服务器配置信息：${NC}"
-                yq '.ssh' "$config_file"
+                echo -e "\n${CYAN}请选择要登录的服务器域名：${NC}"
+                echo -e "${YELLOW}1. hn-a.suanjiayun.com${NC}"
+                echo -e "${YELLOW}2. hn-b.suanjiayun.com${NC}"
+                echo -e "${YELLOW}3. xn-a.suanjiayun.com${NC}"
+                echo -e "${YELLOW}4. xn-b.suanjiayun.com${NC}"
+                echo -e "${YELLOW}请选择域名 [1-4]:${NC}"
+                read domain_choice
+                
+                case $domain_choice in
+                    1) domain="hn-a.suanjiayun.com" ;;
+                    2) domain="hn-b.suanjiayun.com" ;;
+                    3) domain="xn-a.suanjiayun.com" ;;
+                    4) domain="xn-b.suanjiayun.com" ;;
+                    *)
+                        echo -e "${RED}错误：无效的域名选择！${NC}"
+                        echo -e "${YELLOW}按回车键返回主菜单...${NC}"
+                        read
+                        continue
+                        ;;
+                esac
+                
+                echo -e "${YELLOW}请输入用户名：${NC}"
+                read username
+                
+                echo -e "\n${CYAN}🚀 正在登录服务器 $domain ...${NC}"
+                ssh -p 2020 "$username@$domain"
+                
                 echo -e "${YELLOW}按回车键返回主菜单...${NC}"
                 read
                 ;;
