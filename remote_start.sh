@@ -23,7 +23,7 @@ deploy_process() {
 
     # 检查必要工具
     echo -e "\n${BLUE}🔍 检查系统必要工具...${RESET}"
-    for pkg in git unzip; do
+    for pkg in python3 git unzip; do
         if ! command -v $pkg &> /dev/null; then
             echo -e "${YELLOW}⚠️  未找到 $pkg，正在安装...${RESET}"
             apt update -qq && apt install -y $pkg
