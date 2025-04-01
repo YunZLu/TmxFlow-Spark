@@ -43,8 +43,8 @@ deploy_process() {
     if [ ! -d "/Fast-Spark-TTS" ]; then
         git clone https://gh-proxy.com/https://github.com/HuiResearch/Fast-Spark-TTS.git /Fast-Spark-TTS
         echo -e "${GREEN}✅ 仓库克隆完成！${RESET}"
-        # 替换torch为vllm，并追加flask
-        sed -i 's/^torch==2\.5\.1$/vllm/' /Fast-Spark-TTS/requirements.txt && echo -e "\nflask" >> /Fast-Spark-TTS/requirements.txt
+        # 追加vllm，flask
+        echo -e "\nflask\nvllm" >> /Fast-Spark-TTS/requirements.txt
     else
         echo -e "${CYAN}✔️  项目已存在，跳过克隆${RESET}"
     fi
