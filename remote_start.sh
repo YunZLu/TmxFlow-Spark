@@ -49,27 +49,31 @@ deploy_process() {
         echo -e "${CYAN}✔️  项目已存在，跳过克隆${RESET}"
     fi
 
-    # 安装依赖
-    echo -e "\n${BLUE}⚙️  安装Python依赖...${RESET}"
-    cd /Fast-Spark-TTS || exit
+    # 批量依赖检查安装
+    echo -e "${CYAN}⚡ 依赖检查中..."${RESET}
     
-    REQUIREMENTS_FILE="${1:-requirements.txt}"
-    
-    if [ ! -f "$REQUIREMENTS_FILE" ]; then
-        echo -e "${RED}🚨 错误：依赖文件 $REQUIREMENTS_FILE 不存在！${RESET}"
-        exit 1
-    fi
-    
-    echo -e "${CYAN}🔍 检查依赖文件：$REQUIREMENTS_FILE${RESET}"
-    grep -vE '^\s*$|^\s*#' "$REQUIREMENTS_FILE" | while read -r line; do
-        pkg_name=$(echo "$line" | sed -E 's/[[:space:]]*([^!=<>=]+).*/\1/')
-        if pip show "$pkg_name" &>/dev/null; then
-            echo -e "${CYAN}✔️  已安装：$pkg_name${RESET}"
+    # 预加载已安装包列表
+    mapfile -t INSTALLED < <(pip list --format=freeze | cut -d= -f1)
+
+    PIP_OPTS="--root-user-action=ignore"
+    # 批量处理依赖
+    TO_INSTALL=()
+    while read -r line; do
+        pkg_name=$(sed -E 's/[[:space:]]*([^!=<>=]+).*/\1/' <<< "$line")
+        if printf '%s\n' "${INSTALLED[@]}" | grep -qxF "$pkg_name"; then
+            echo -e "${CYAN}✔️  ${pkg_name}${RESET}"
         else
-            echo -e "${YELLOW}➡️  正在安装：$line${RESET}"
-            pip install "$line"
+            echo -e "${YELLOW}➡️  ${line}${RESET}"
+            TO_INSTALL+=("$line")
         fi
-    done
+    done < <(grep -vE '^\s*$|^\s*#' "$REQUIREMENTS_FILE")
+    
+    # 批量安装
+    if [ ${#TO_INSTALL[@]} -gt 0 ]; then
+        echo -e "\n${BLUE}🚀 批量安装缺失依赖..."${RESET}
+        pip install $PIP_OPTS sympy==1.13.1
+        pip install $PIP_OPTS -U "${TO_INSTALL[@]}"
+    fi
     
     # 下载模型
     echo -e "\n${BLUE}🤖 下载语音模型...${RESET}"
