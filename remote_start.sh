@@ -73,6 +73,8 @@ deploy_process() {
         echo -e "\n${BLUE}🚀 批量安装缺失依赖..."${RESET}
         pip install $PIP_OPTS sympy==1.13.1
         pip install $PIP_OPTS -U "${TO_INSTALL[@]}"
+    else:
+        echo -e "${GREEN}✅ 依赖安装完成！${RESET}"
     fi
     
     # 下载模型
