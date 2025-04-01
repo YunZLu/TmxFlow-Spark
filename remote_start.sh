@@ -43,6 +43,8 @@ deploy_process() {
     if [ ! -d "/Fast-Spark-TTS" ]; then
         git clone https://gh-proxy.com/https://github.com/HuiResearch/Fast-Spark-TTS.git /Fast-Spark-TTS
         echo -e "${GREEN}✅ 仓库克隆完成！${RESET}"
+        # 替换torch为vllm，并追加flask
+        sed -i 's/^torch==2\.5\.1$/vllm/' requirements.txt && echo -e "\nflask" >> requirements.txt
     else
         echo -e "${CYAN}✔️  项目已存在，跳过克隆${RESET}"
     fi
@@ -69,18 +71,6 @@ deploy_process() {
         fi
     done
     
-    echo -e "\n${BLUE}🔍 检查额外依赖...${RESET}"
-    EXTRA_PKGS=("vllm" "flask")
-    for pkg in "${EXTRA_PKGS[@]}"; do
-        if pip show "$pkg" &>/dev/null; then
-            echo -e "${CYAN}✔️  已安装：$pkg${RESET}"
-        else
-            echo -e "${YELLOW}➡️  正在安装：$pkg${RESET}"
-            pip install "$pkg"
-        fi
-    done
-    echo -e "${GREEN}✅ 所有依赖检查完成！${RESET}"
-
     # 下载模型
     echo -e "\n${BLUE}🤖 下载语音模型...${RESET}"
     mkdir -p Spark-TTS-0.5B
