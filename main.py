@@ -150,7 +150,7 @@ def tts_proxy():
                 return send_file(cache_path, mimetype='audio/wav')
 
             # 构造后端请求
-            backend_url = 'http://localhost:8000/speak'
+            backend_url = 'http://localhost:8002/speak'
             headers = {'Content-Type': 'application/json'}
             payload = {
                 "name": params['name'],
