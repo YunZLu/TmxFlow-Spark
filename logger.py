@@ -20,7 +20,7 @@ class ProfessionalFormatter(logging.Formatter):
     
     RESET = '\033[0m'
 
-    def __init__(self, datefmt=None):
+    def __init__(self, datefmt=None):  # 修复了这里的方法名称
         super().__init__(datefmt=datefmt)
         self.datefmt = datefmt
 
@@ -99,4 +99,4 @@ def setup_logger(name, level=logging.INFO):
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
     
-    return logger
+    return logger 
