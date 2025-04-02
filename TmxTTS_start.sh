@@ -137,7 +137,7 @@ show_menu() {
                     echo -e "${GREEN}✅ 成功${NC}"
                   else
                     echo -e "${RED}❌ 失败${NC}"
-                    exit 1
+                    
                   fi
                 }
                 
@@ -197,7 +197,7 @@ show_menu() {
                   current_time=$(date +%s)
                   if (( current_time - start_time >= timeout )); then
                     echo -e "${RED}⏰ 后端服务启动超时，请检查 ~/server.log${NC}"
-                    exit 1
+                    
                   fi
                   sleep 5
                 done
@@ -206,7 +206,7 @@ show_menu() {
                   echo -e "${GREEN}🌍 前端服务已准备就绪${NC}"
                 else
                   echo -e "${RED}❌ 前端服务启动失败，请检查 ~/server.log${NC}"
-                  exit 1
+                  
                 fi
 ENDSSH
                 check_status
