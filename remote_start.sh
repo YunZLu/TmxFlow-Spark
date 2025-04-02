@@ -84,7 +84,7 @@ deploy_process() {
     echo -e "\n${BLUE}🤖 下载语音模型...${RESET}"
     mkdir -p Spark-TTS-0.5B
     if [ ! -d "Spark-TTS-0.5B" ] || [ -z "$(ls -A Spark-TTS-0.5B)" ]; then
-        pip install -U -q huggingface_hub
+        pip install $PIP_OPTS -U -q huggingface_hub
         export HF_ENDPOINT=https://hf-mirror.com
         echo -e "${YELLOW}⏳ 正在从镜像站下载模型，请耐心等待...${RESET}"
         huggingface-cli download --force-download SparkAudio/Spark-TTS-0.5B --local-dir Spark-TTS-0.5B
