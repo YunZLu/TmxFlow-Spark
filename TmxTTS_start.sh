@@ -377,4 +377,4 @@ else
     echo -e "${CYAN}🖥️ 检测到Ubuntu环境，开始部署...${NC}"
     deploy
     show_menu
-fi
+fi 
