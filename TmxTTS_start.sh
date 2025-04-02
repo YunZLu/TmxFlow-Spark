@@ -137,7 +137,7 @@ show_menu() {
                     echo -e "${GREEN}✅ 成功${NC}"
                   else
                     echo -e "${RED}❌ 失败${NC}"
-                    
+                    exit 1
                   fi
                 }
                 
@@ -180,10 +180,10 @@ show_menu() {
                 # 启动新服务 🔄
                 cd /Fast-Spark-TTS/
                 echo "🚀 启动 server.py..."
-                nohup /root/miniconda3/bin/python server.py --model_path Spark-TTS-0.5B --backend vllm --llm_device cuda --tokenizer_device cuda --detokenizer_device cuda --wav2vec_attn_implementation sdpa --llm_attn_implementation sdpa --torch_dtype "bfloat16" --max_length 32768 --llm_gpu_memory_utilization 0.6 --host 0.0.0.0 --port 8000 > ~/server.log 2>&1 &
+                nohup /root/miniconda3/bin/python server.py --model_path Spark-TTS-0.5B --backend vllm --llm_device cuda --tokenizer_device cuda --detokenizer_device cuda --wav2vec_attn_implementation sdpa --llm_attn_implementation sdpa --torch_dtype "bfloat16" --max_length 32768 --llm_gpu_memory_utilization 0.6 --host 0.0.0.0 --port 8002 > ~/server.log 2>&1 &
                 
                 echo "🌐 启动 frontend.py..."
-                nohup /root/miniconda3/bin/python frontend.py --backend_url http://127.0.0.1:8000 --host 0.0.0.0 --port 8001 > ~/frontend.log 2>&1 &
+                nohup /root/miniconda3/bin/python frontend.py --backend_url http://127.0.0.1:8002 --host 0.0.0.0 --port 8001 > ~/frontend.log 2>&1 &
                 
                 # 服务状态检查 🔄
                 echo "⏳ 等待后端服务初始化（请耐心等待三分钟）..."
@@ -197,7 +197,7 @@ show_menu() {
                   current_time=$(date +%s)
                   if (( current_time - start_time >= timeout )); then
                     echo -e "${RED}⏰ 后端服务启动超时，请检查 ~/server.log${NC}"
-                    
+                    exit 1
                   fi
                   sleep 5
                 done
@@ -206,7 +206,7 @@ show_menu() {
                   echo -e "${GREEN}🌍 前端服务已准备就绪${NC}"
                 else
                   echo -e "${RED}❌ 前端服务启动失败，请检查 ~/server.log${NC}"
-                  
+                  exit 1
                 fi
 ENDSSH
                 check_status
@@ -224,7 +224,7 @@ ENDSSH
                   fi
                 }
                 
-                establish_tunnel 8000
+                establish_tunnel 8002
                 establish_tunnel 8001
                 
                 # 4. 最终验证 🔄
@@ -240,12 +240,12 @@ ENDSSH
                 }
                 
                 echo -e "\n🔧 后端服务状态："
-                check_port 8000
+                check_port 8002
                 echo -e "\n🖥️ 前端服务状态："
                 check_port 8001
                 
                 echo -e "\n🚨 访问测试："
-                echo -e "${GREEN}🔧 后端服务：${NC}curl -I http://localhost:8000"
+                echo -e "${GREEN}🔧 后端服务：${NC}curl -I http://localhost:8002"
                 echo -e "${GREEN}🌐 前端界面：${NC}打开浏览器访问 http://localhost:8001"
                 echo -e "\n${CYAN}🚀 正在启动应用...${NC}"
                 cd /root/TmxFlow-Spark
