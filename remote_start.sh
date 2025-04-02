@@ -75,7 +75,7 @@ deploy_process() {
     if [ ${#TO_INSTALL[@]} -gt 0 ]; then
         echo -e "\n${BLUE}🚀 批量安装缺失依赖...${RESET}"
         pip install $PIP_OPTS sympy==1.13.1
-        pip install $PIP_OPTS -U "${TO_INSTALL[@]}"
+        pip install $PIP_OPTS -U "${TO_INSTALL[@]}" -i https://pypi.mirrors.ustc.edu.cn/simple/
     else
         echo -e "${GREEN}✅ 依赖安装完成！${RESET}"
     fi
