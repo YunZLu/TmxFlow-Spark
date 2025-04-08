@@ -43,6 +43,8 @@ deploy_process() {
     if [ ! -d "/Fast-Spark-TTS" ]; then
         git clone https://gh-proxy.com/https://github.com/HuiResearch/Fast-Spark-TTS.git /Fast-Spark-TTS
         echo -e "${GREEN}✅ 仓库克隆完成！${RESET}"
+        # 固定transformers版本
+        sed -i 's/^transformers.*/transformers==4.50.3/' /Fast-Spark-TTS/requirements.txt
         # 追加vllm，flask
         echo -e "\nflask\nvllm==0.8.2" >> /Fast-Spark-TTS/requirements.txt
     else
