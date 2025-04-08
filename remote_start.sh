@@ -1,4 +1,4 @@
-#!/bin/bash
+ #!/bin/bash
 
 # 仅限交互式终端运行
 if [[ ! -t 0 ]]; then
@@ -23,7 +23,7 @@ deploy_process() {
 
     # 检查必要工具
     echo -e "\n${BLUE}🔍 检查系统必要工具...${RESET}"
-    for pkg in python3 git unzip; do
+    for pkg in python3 git unzip rsync lsof; do
         if ! command -v $pkg &> /dev/null; then
             echo -e "${YELLOW}⚠️  未找到 $pkg，正在安装...${RESET}"
             apt update -qq && apt install -y $pkg
@@ -41,12 +41,10 @@ deploy_process() {
     # 克隆仓库
     echo -e "\n${BLUE}📂 克隆项目仓库...${RESET}"
     if [ ! -d "/Fast-Spark-TTS" ]; then
-        git clone https://ghfast.top/https://github.com/HuiResearch/Fast-Spark-TTS.git /Fast-Spark-TTS
+        git clone https://gh-proxy.com/https://github.com/HuiResearch/Fast-Spark-TTS.git /Fast-Spark-TTS
         echo -e "${GREEN}✅ 仓库克隆完成！${RESET}"
-        # 固定transformers版本
-        sed -i 's/^transformers.*/transformers==4.50.3/' /Fast-Spark-TTS/requirements.txt
         # 追加vllm，flask
-        echo -e "\nflask\nvllm==0.8.2" >> /Fast-Spark-TTS/requirements.txt
+        echo -e "\nflask\nvllm" >> /Fast-Spark-TTS/requirements.txt
     else
         echo -e "${CYAN}✔️  项目已存在，跳过克隆${RESET}"
     fi
@@ -77,7 +75,7 @@ deploy_process() {
     if [ ${#TO_INSTALL[@]} -gt 0 ]; then
         echo -e "\n${BLUE}🚀 批量安装缺失依赖...${RESET}"
         pip install $PIP_OPTS sympy==1.13.1
-        pip install $PIP_OPTS -U "${TO_INSTALL[@]}" -i https://pypi.mirrors.ustc.edu.cn/simple/
+        pip install $PIP_OPTS -U "${TO_INSTALL[@]}"
     else
         echo -e "${GREEN}✅ 依赖安装完成！${RESET}"
     fi
@@ -148,11 +146,12 @@ start_process() {
     
     while true; do
         echo -e "\n${BOLD}${CYAN}请选择操作：${RESET}"
-        echo -e "1. 🚀 启动cpolar内网穿透"
-        echo -e "2. 🔑 修改cpolar token"
-        echo -e "3. 🔒 修改root密码"
+        echo -e "1. 🌐 启动cpolar内网穿透"
+        echo -e "2. 🚀 启动Spark语音服务"
+        echo -e "3. 🔑 修改cpolar token"
+        echo -e "4. 🔒 修改root密码"
         echo -e "0. 🚪 退出系统"
-        echo -ne "${BOLD}👉 请输入数字选择 [0-3]: ${RESET}"
+        echo -ne "${BOLD}👉 请输入数字选择 [0-4]: ${RESET}"
         read -r choice
 
         case $choice in
@@ -162,13 +161,107 @@ start_process() {
                 ./cpolar tcp 2020 > /dev/null &
                 echo -e "${GREEN}✅ cpolar已启动！访问地址：${CYAN}https://dashboard.cpolar.com${RESET}"
                 ;;
-            2) 
+            2)
+                # 启动服务逻辑
+                echo -e "\n${YELLOW}⏳ 正在启动服务...${RESET}"
+                cd /Fast-Spark-TTS || { echo -e "${RED}🚨 错误：项目目录不存在${RESET}"; continue; }
+            
+                # 检查并杀死占用端口的进程
+                check_and_kill_port() {
+                    local port=$1
+                    echo -e "${CYAN}🔍 检查 ${port} 端口占用...${RESET}"
+                    if pid=$(lsof -ti :$port); then
+                        echo -e "${YELLOW}⚠️  发现 ${port} 端口被占用（PID: ${pid}），正在终止进程...${RESET}"
+                        if kill -9 $pid 2>/dev/null; then
+                            echo -e "${GREEN}✅ 成功终止 PID ${pid}${RESET}"
+                        else
+                            echo -e "${RED}🚨 无法终止进程，请手动处理${RESET}"
+                            return 1
+                        fi
+                    else
+                        echo -e "${CYAN}✔️  ${port} 端口可用${RESET}"
+                    fi
+                    return 0
+                }
+            
+                # 处理后端端口
+                if ! check_and_kill_port 8002; then
+                    continue
+                fi
+            
+                # 启动后端服务
+                echo -e "\n${YELLOW}🚀 启动后端服务（端口 8002）...${RESET}"
+                > ~/server.log
+                nohup /root/miniforge3/bin/python server.py --model_path Spark-TTS-0.5B --backend vllm --llm_device cuda --tokenizer_device cuda --detokenizer_device cuda --wav2vec_attn_implementation sdpa --llm_attn_implementation sdpa --torch_dtype "float32" --max_length 32768 --llm_gpu_memory_utilization 0.6 --host 0.0.0.0 --port 8002 > ~/server.log 2>&1 &
+            
+                # 监控后端日志
+                backend_success=0
+                echo -e "${CYAN}⚡ 监控后端日志（最多180秒）...${RESET}"
+                start_time=$(date +%s)
+                while [ $(( $(date +%s) - start_time )) -lt 180 ]; do
+                    if grep -qi "error" ~/server.log; then
+                        echo -e "\n${RED}🚨 后端启动失败，发现错误：${RESET}"
+                        grep -i -m 3 "error" ~/server.log
+                        pkill -f "server.py"
+                        backend_success=0
+                        break
+                    fi
+                    
+                    if grep -q "Application startup complete." ~/server.log; then
+                        echo -e "\n${GREEN}✅ 后端服务启动成功！${RESET}"
+                        backend_success=1
+                        break
+                    fi
+                    sleep 1
+                done
+            
+                if [ $backend_success -ne 1 ]; then
+                    echo -e "${RED}🚨 后端服务启动失败，请检查 ~/server.log${RESET}"
+                    continue
+                fi
+            
+                # 处理前端端口
+                if ! check_and_kill_port 8001; then
+                    continue
+                fi
+            
+                # 启动前端服务
+                echo -e "\n${YELLOW}🚀 启动前端服务（端口 8001）...${RESET}"
+                > ~/frontend.log
+                nohup /root/miniforge3/bin/python frontend.py --backend_url http://127.0.0.1:8002 --host 0.0.0.0 --port 8001 > ~/frontend.log 2>&1 &
+            
+                # 监控前端日志
+                frontend_success=0
+                echo -e "${CYAN}⚡ 监控前端日志（最多30秒）...${RESET}"
+                start_time=$(date +%s)
+                while [ $(( $(date +%s) - start_time )) -lt 30 ]; do
+                    if grep -qi "error" ~/frontend.log; then
+                        echo -e "\n${RED}🚨 前端启动失败，发现错误：${RESET}"
+                        grep -i -m 3 "error" ~/frontend.log
+                        pkill -f "frontend.py"
+                        frontend_success=0
+                        break
+                    fi
+                    
+                    if grep -q "Running on http://" ~/frontend.log; then
+                        echo -e "\n${GREEN}✅ 前端服务启动成功！${RESET}"
+                        frontend_success=1
+                        break
+                    fi
+                    sleep 1
+                done
+            
+                if [ $frontend_success -ne 1 ]; then
+                    echo -e "${RED}🚨 前端服务启动异常，请检查 ~/frontend.log${RESET}"
+                fi
+                ;;
+            3) 
                 echo -ne "\n${CYAN}请输入新的cpolar token: ${RESET}"
                 read -r new_token
                 ./cpolar authtoken "$new_token"
                 echo -e "${GREEN}✅ Token更新成功！${RESET}"
                 ;;
-            3) 
+            4) 
                 echo -e "\n${YELLOW}🔐 正在修改root密码...${RESET}"
                 passwd root
                 ;;
