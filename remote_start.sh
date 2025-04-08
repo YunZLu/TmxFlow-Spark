@@ -44,7 +44,7 @@ deploy_process() {
         git clone https://gh-proxy.com/https://github.com/HuiResearch/Fast-Spark-TTS.git /Fast-Spark-TTS
         echo -e "${GREEN}✅ 仓库克隆完成！${RESET}"
         # 追加vllm，flask
-        echo -e "\nflask\nvllm" >> /Fast-Spark-TTS/requirements.txt
+        echo -e "\nflask\nvllm==0.8.2" >> /Fast-Spark-TTS/requirements.txt
     else
         echo -e "${CYAN}✔️  项目已存在，跳过克隆${RESET}"
     fi
