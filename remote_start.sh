@@ -43,9 +43,10 @@ deploy_process() {
     if [ ! -d "/Fast-Spark-TTS" ]; then
         git clone https://gh-proxy.com/https://github.com/HuiResearch/Fast-Spark-TTS.git /Fast-Spark-TTS
         echo -e "${GREEN}✅ 仓库克隆完成！${RESET}"
+        # 固定transformers版本
+        sed -i 's/^transformers.*/transformers==4.50.3/' /Fast-Spark-TTS/requirements.txt
         # 追加vllm，flask
-        echo -e "\nflask\nvllm" >> /Fast-Spark-TTS/requirements.txt
-    else
+        echo -e "\nflask\nvllm==0.7.3" >> /Fast-Spark-TTS/requirements.txt    else
         echo -e "${CYAN}✔️  项目已存在，跳过克隆${RESET}"
     fi
 
@@ -74,7 +75,6 @@ deploy_process() {
     # 安装缺失依赖
     if [ ${#TO_INSTALL[@]} -gt 0 ]; then
         echo -e "\n${BLUE}🚀 批量安装缺失依赖...${RESET}"
-        pip install $PIP_OPTS sympy==1.13.1
         pip install $PIP_OPTS -U "${TO_INSTALL[@]}"
     else
         echo -e "${GREEN}✅ 依赖安装完成！${RESET}"
@@ -199,9 +199,9 @@ start_process() {
                 echo -e "${CYAN}⚡ 监控后端日志（最多180秒）...${RESET}"
                 start_time=$(date +%s)
                 while [ $(( $(date +%s) - start_time )) -lt 180 ]; do
-                    if grep -qi "error" ~/server.log; then
+                    if grep -q "Error" ~/server.log; then
                         echo -e "\n${RED}🚨 后端启动失败，发现错误：${RESET}"
-                        grep -i -m 3 "error" ~/server.log
+                        grep -m 10 "Error" ~/server.log
                         pkill -f "server.py"
                         backend_success=0
                         break
@@ -235,9 +235,9 @@ start_process() {
                 echo -e "${CYAN}⚡ 监控前端日志（最多30秒）...${RESET}"
                 start_time=$(date +%s)
                 while [ $(( $(date +%s) - start_time )) -lt 30 ]; do
-                    if grep -qi "error" ~/frontend.log; then
+                    if grep -q "Error" ~/frontend.log; then
                         echo -e "\n${RED}🚨 前端启动失败，发现错误：${RESET}"
-                        grep -i -m 3 "error" ~/frontend.log
+                        grep -m 10 "Error" ~/frontend.log
                         pkill -f "frontend.py"
                         frontend_success=0
                         break
