@@ -169,7 +169,7 @@ start_process() {
                 # 检查并杀死占用端口的进程
                 check_and_kill_port() {
                     local port=$1
-                    echo -e "${CYAN}🔍 检查 ${port} 端口占用...${RESET}"
+                    echo -e "${CYAN}\n🔍 检查 ${port} 端口占用...${RESET}"
                     if pid=$(lsof -ti :$port); then
                         echo -e "${YELLOW}⚠️  发现 ${port} 端口被占用（PID: ${pid}），正在终止进程...${RESET}"
                         if kill -9 $pid 2>/dev/null; then
