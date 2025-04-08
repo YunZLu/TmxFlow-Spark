@@ -157,6 +157,7 @@ start_process() {
 
         case $choice in
             1) 
+                cd /
                 echo -e "\n${YELLOW}⏳ 正在启动cpolar服务...${RESET}"
                 pkill -f cpolar
                 ./cpolar tcp 2020 > /dev/null &
@@ -255,6 +256,7 @@ start_process() {
                 if [ $frontend_success -ne 1 ]; then
                     echo -e "${RED}🚨 前端服务启动异常，请检查 ~/frontend.log${RESET}"
                 fi
+                cd /
                 ;;
             3) 
                 echo -ne "\n${CYAN}请输入新的cpolar token: ${RESET}"
