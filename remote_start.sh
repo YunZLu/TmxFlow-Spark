@@ -46,7 +46,8 @@ deploy_process() {
         # 固定transformers版本
         sed -i 's/^transformers.*/transformers==4.50.3/' /Fast-Spark-TTS/requirements.txt
         # 追加vllm，flask
-        echo -e "\nflask\nvllm==0.7.3" >> /Fast-Spark-TTS/requirements.txt    else
+        echo -e "\nflask\nvllm==0.7.3" >> /Fast-Spark-TTS/requirements.txt
+        else
         echo -e "${CYAN}✔️  项目已存在，跳过克隆${RESET}"
     fi
 
