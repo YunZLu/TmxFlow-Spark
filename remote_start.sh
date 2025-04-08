@@ -158,8 +158,27 @@ start_process() {
             1) 
                 echo -e "\n${YELLOW}⏳ 正在启动cpolar服务...${RESET}"
                 pkill -f cpolar
-                ./cpolar tcp 2020 > /dev/null &
-                echo -e "${GREEN}✅ cpolar已启动！访问地址：${CYAN}https://dashboard.cpolar.com${RESET}"
+                rm -f cpolar.log 2> /dev/null  # 清理旧日志
+                
+                # 使用行缓冲模式启动并记录日志
+                stdbuf -oL ./cpolar tcp 2020 > ～/cpolar.log 2>&1 &
+                
+                # 等待并提取URL
+                COUNTER=0
+                MAX_WAIT=10
+                URL=""
+                while [[ $COUNTER -lt $MAX_WAIT && -z "$URL" ]]; do
+                    sleep 1
+                    URL=$(grep -oP 'Forwarding \K\S+' ～/cpolar.log 2> /dev/null | tail -n1)
+                    COUNTER=$((COUNTER + 1))
+                done
+                
+                # 显示结果
+                if [[ -n "$URL" ]]; then
+                    echo -e "${GREEN}✅ cpolar已启动！代理地址：${CYAN}$URL${RESET}"
+                else
+                    echo -e "${RED}❌ 地址获取失败，请查看 cpolar.log${RESET}"
+                fi
                 ;;
             2)
                 # 启动服务逻辑
