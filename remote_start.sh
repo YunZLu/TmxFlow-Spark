@@ -41,7 +41,10 @@ deploy_process() {
     # 克隆仓库
     echo -e "\n${BLUE}📂 克隆项目仓库...${RESET}"
     if [ ! -d "/Fast-Spark-TTS" ]; then
-        git clone https://gh-proxy.com/https://github.com/HuiResearch/Fast-Spark-TTS.git /Fast-Spark-TTS
+        git clone https://gh-proxy.com/https://github.com/HuiResearch/Fast-Spark-TTS.git /Fast-Spark-TTS || {
+                    echo -e "${RED}❌ 仓库克隆失败!${RESET}"
+                    exit 1
+                }
         echo -e "${GREEN}✅ 仓库克隆完成！${RESET}"
         # 固定transformers版本
         sed -i 's/^transformers.*/transformers==4.50.3/' /Fast-Spark-TTS/requirements.txt
@@ -76,7 +79,10 @@ deploy_process() {
     # 安装缺失依赖
     if [ ${#TO_INSTALL[@]} -gt 0 ]; then
         echo -e "\n${BLUE}🚀 批量安装缺失依赖...${RESET}"
-        pip install $PIP_OPTS -U "${TO_INSTALL[@]}"
+        pip install $PIP_OPTS -U "${TO_INSTALL[@]}" || {
+                    echo -e "${RED}❌ 依赖安装失败!${RESET}"
+                    exit 1
+                }
     else
         echo -e "${GREEN}✅ 依赖安装完成！${RESET}"
     fi
@@ -88,7 +94,10 @@ deploy_process() {
         pip install $PIP_OPTS -U -q huggingface_hub
         export HF_ENDPOINT=https://hf-mirror.com
         echo -e "${YELLOW}⏳ 正在从镜像站下载模型，请耐心等待...${RESET}"
-        huggingface-cli download --force-download SparkAudio/Spark-TTS-0.5B --local-dir Spark-TTS-0.5B
+        huggingface-cli download --force-download SparkAudio/Spark-TTS-0.5B --local-dir Spark-TTS-0.5B || {
+                    echo -e "${RED}❌ 模型下载失败!${RESET}"
+                    exit 1
+                }
         echo -e "${GREEN}✅ 模型下载完成！${RESET}"
     else
         echo -e "${CYAN}✔️  模型已存在，跳过下载${RESET}"
@@ -99,7 +108,10 @@ deploy_process() {
     cd / || exit
     if [ ! -f "cpolar" ]; then
         echo -e "${YELLOW}⬇️  下载cpolar客户端...${RESET}"
-        wget --show-progress -q -O "cpolar.zip" "https://www.cpolar.com/static/downloads/releases/3.3.18/cpolar-stable-linux-amd64.zip"
+        wget --show-progress -q -O "cpolar.zip" "https://www.cpolar.com/static/downloads/releases/3.3.18/cpolar-stable-linux-amd64.zip" || {
+                    echo -e "${RED}❌ cpolar下载失败!${RESET}"
+                    exit 1
+                }
         unzip -o -q cpolar.zip
         chmod +x cpolar
         token=""
