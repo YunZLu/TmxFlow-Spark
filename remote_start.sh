@@ -1,4 +1,4 @@
- #!/bin/bash
+#!/bin/bash
 
 # 仅限交互式终端运行
 if [[ ! -t 0 ]]; then
