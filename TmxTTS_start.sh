@@ -190,7 +190,7 @@ show_menu() {
                 timeout=180
                 start_time=$(date +%s)
                 while true; do
-                  if grep -q "Warmup complete" ~/frontend.log; then
+                  if grep -q "Warmup complete" ~/server.log; then
                     echo -e "${GREEN}🎉 后端服务已准备就绪${NC}"
                     break
                   fi
@@ -205,7 +205,7 @@ show_menu() {
                 if pgrep -f "frontend.py" >/dev/null; then
                   echo -e "${GREEN}🌍 前端服务已准备就绪${NC}"
                 else
-                  echo -e "${RED}❌ 前端服务启动失败，请检查 ~/server.log${NC}"
+                  echo -e "${RED}❌ 前端服务启动失败，请检查 ~/frontend.log${NC}"
                   
                 fi
 ENDSSH
