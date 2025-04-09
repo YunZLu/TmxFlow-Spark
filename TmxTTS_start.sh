@@ -130,10 +130,28 @@ sync_roles() {
 }
 
 establish_tunnel() {
+  # 先终止该端口所有现存隧道
+  pids=$(ps aux | grep "[s]sh.*-L.*:$1" | awk '{print $2}')
+  if [ -n "$pids" ]; then
+    echo -e "🕙 清理现存连接..."
+    echo $pids | xargs kill -9 >/dev/null 2>&1
+    sleep 1 # 等待进程完全退出
+  fi
+
   # 清除已知主机记录
   ssh-keygen -R "[$HOST]:$PORT" >/dev/null 2>&1
   echo -n "🛰️ 建立隧道 $1..."
-  sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 -L $1:localhost:$1 -p $PORT -fNq $SERVER
+  
+  # 建立新连接
+  sshpass -p "$PASSWORD" ssh \
+    -o StrictHostKeyChecking=no \
+    -o UserKnownHostsFile=/dev/null \
+    -o ConnectTimeout=10 \
+    -L $1:localhost:$1 \
+    -p $PORT \
+    -fNq $SERVER
+
+  # 状态检测
   if ps aux | grep -q "[s]sh.*-L.*:$1"; then
     echo -e "${GREEN}✅ 成功${NC}"
   else
