@@ -25,7 +25,7 @@ deploy() {
             [ ! -x "$(command -v git)" ] && missing+=("git")
             [ ! -x "$(command -v sshpass)" ] && missing+=("sshpass")
             [ ! -x "$(command -v rsync)" ] && missing+=("rsync")
-            [ ! -x "$(command -v python3)" ] ||。 ! python3 -c "import ensurepip; import venv" &>/dev/null && missing+=("python3")
+            [ ! -x "$(command -v python3)" ] && ! python3 -c "import ensurepip; import venv" &>/dev/null && missing+=("python3")
             [ ! -x "$(command -v yq)" ] && missing+=("yq")
             [ ! -x "$(command -v ssh)" ] && missing+=("openssh")
             [ ! -x "$(command -v ruby)" ] && missing+=("ruby")
