@@ -47,7 +47,7 @@ deploy_process() {
                 }
         echo -e "${GREEN}✅ 仓库克隆完成！${RESET}"
         cd /Fast-Spark-TTS
-        git checkout a4c66c3
+        git checkout c729c97
         # 固定transformers版本
         sed -i 's/^transformers.*/transformers==4.50.3/' /Fast-Spark-TTS/requirements.txt
         # 追加vllm，flask
