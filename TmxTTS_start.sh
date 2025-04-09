@@ -183,14 +183,14 @@ show_menu() {
                 nohup /root/miniconda3/bin/python server.py --model_path Spark-TTS-0.5B --backend vllm --llm_device cuda --tokenizer_device cuda --detokenizer_device cuda --wav2vec_attn_implementation sdpa --llm_attn_implementation sdpa --torch_dtype "bfloat16" --max_length 32768 --llm_gpu_memory_utilization 0.6 --host 0.0.0.0 --port 8002 > ~/server.log 2>&1 &
                 
                 echo "🌐 启动 frontend.py..."
-                nohup /root/miniconda3/bin/python frontend.py --backend_url http://127.0.0.1:8002 --host 0.0.0.0 --port 8001 > ~/frontend.log 2>&1 &
+                nohup /root/miniconda3/bin/python frontend.py  --backend_url http://127.0.0.1:8002  --host 0.0.0.0  --port 8001 > ~/frontend.log 2>&1 &
                 
                 # 服务状态检查 🔄
                 echo "⏳ 等待后端服务初始化（请耐心等待三分钟）..."
                 timeout=180
                 start_time=$(date +%s)
                 while true; do
-                  if grep -q "Warmup complete" ~/server.log; then
+                  if grep -q "Warmup complete" ~/frontend.log; then
                     echo -e "${GREEN}🎉 后端服务已准备就绪${NC}"
                     break
                   fi
