@@ -25,7 +25,7 @@ deploy() {
             [ ! -x "$(command -v git)" ] && missing+=("git")
             [ ! -x "$(command -v sshpass)" ] && missing+=("sshpass")
             [ ! -x "$(command -v rsync)" ] && missing+=("rsync")
-            [ ! -x "$(command -v python3)" ] && ! python3 -c "import ensurepip; import venv" &>/dev/null && missing+=("python3")
+            [ ! -x "$(command -v python3)" ] && missing+=("python3")
             [ ! -x "$(command -v yq)" ] && missing+=("yq")
             [ ! -x "$(command -v ssh)" ] && missing+=("openssh")
             [ ! -x "$(command -v ruby)" ] && missing+=("ruby")
@@ -33,13 +33,21 @@ deploy() {
             # 安装基础依赖
             if [ ${#missing[@]} -gt 0 ]; then
                 echo -e "${YELLOW}⚠️ 缺少依赖: ${missing[*]}${NC}"
-                apt update -y && apt install -y ${missing[@]}
+                apt update -y && apt install -y "${missing[@]}"
+            fi
+        
+            # 检查Python venv模块
+            if ! python3 -c "import ensurepip; import venv" &>/dev/null; then
+                echo -e "${YELLOW}⚠️ 缺少Python venv模块，尝试安装python3.12-venv${NC}"
+                apt install -y python3.12-venv || {
+                    echo -e "${RED}安装python3.12-venv失败，请检查系统源或手动安装${NC}"
+                    exit 1
+                }
             fi
         
             # 单独处理 lolcat 安装
             if ! command -v lolcat &>/dev/null; then
                 echo -e "${YELLOW}⚠️ 缺少依赖: lolcat${NC}"
-
                 gem install lolcat || {
                     echo -e "${RED}安装 lolcat 失败${NC}"
                     exit 1
