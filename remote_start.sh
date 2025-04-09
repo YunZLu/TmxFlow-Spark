@@ -26,7 +26,7 @@ deploy_process() {
     for pkg in python3 git unzip rsync lsof; do
         if ! command -v $pkg &> /dev/null; then
             echo -e "${YELLOW}⚠️  未找到 $pkg，正在安装...${RESET}"
-            apt update -qq && apt install -y $pkg
+            apt update -y && apt install -y $pkg
             echo -e "${GREEN}✅ $pkg 安装完成！${RESET}"
         else
             echo -e "${CYAN}✔️  $pkg 已安装${RESET}"
