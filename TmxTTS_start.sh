@@ -1,6 +1,5 @@
 #!/bin/bash
 # 定义Ubuntu的安装目录路径
-termux_home="/data/data/com.termux/files/home"
 current_dir=$(pwd)
 TTS_dir="$current_dir/TmxFlow-Spark"
 config_file="$TTS_dir/config.yaml"
