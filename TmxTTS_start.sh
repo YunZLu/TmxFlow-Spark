@@ -28,6 +28,7 @@ deploy() {
             [ ! -x "$(command -v python3)" ] ||。 ! python3 -c "import ensurepip; import venv" &>/dev/null && missing+=("python3")
             [ ! -x "$(command -v yq)" ] && missing+=("yq")
             [ ! -x "$(command -v ssh)" ] && missing+=("openssh")
+            [ ! -x "$(command -v ruby)" ] && missing+=("ruby")
             
             # 安装基础依赖
             if [ ${#missing[@]} -gt 0 ]; then
@@ -38,13 +39,7 @@ deploy() {
             # 单独处理 lolcat 安装
             if ! command -v lolcat &>/dev/null; then
                 echo -e "${YELLOW}⚠️ 缺少依赖: lolcat${NC}"
-                echo -e "${BLUE}🛠️ 正在安装 Ruby 和 lolcat...${NC}"
-                apt install -y ruby || {
-                    echo -e "${RED}安装 Ruby 失败${NC}"
-                    exit 1
-                }
-                # 确保 gem 环境变量已加载
-                export PATH="$HOME/.gem/ruby/$(ls -1t $HOME/.gem/ruby | head -n1)/bin:$PATH"
+
                 gem install lolcat || {
                     echo -e "${RED}安装 lolcat 失败${NC}"
                     exit 1
