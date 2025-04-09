@@ -15,7 +15,7 @@ import traceback
 def show_welcome():
     print("\033[38;5;213m")  # 使用柔和的品红色
     print("  ╭"+"─"*64+"╮")
-    print("  │ \033[1;38;5;231m🦄 \033[38;5;219mTermux Flow Spark-TTS Server  \033[0;38;5;213mv2.0.0"+ " "*24 +"│")
+    print("  │ \033[1;38;5;231m🦄 \033[38;5;219mTermux Flow Spark-TTS Server  \033[0;38;5;213mv2.0.1"+ " "*24 +"│")
     print("  ├"+"─"*64+"┤")
     print("  │ \033[38;5;219m✦ 数据流向示意图：" + "━"*40 + "━━━┓ \033[38;5;213m│")
     print("  │ \033[38;5;225m   🎼 Spark-TTS → 🦊 Proxy Server → 📦 Cache →  🌸 SillyTevan\033[38;5;213m  │")
@@ -246,6 +246,7 @@ if __name__ == '__main__':
     cli.show_server_banner = lambda *args, **kwargs: None
     
     # 启动应用
-    logger.info("服务器将监听 http://0.0.0.0:5000")
-    logger.info("请求链接示例 http://0.0.0.0:5000/tts?name=后羿&text=所以今天是周一！")
+    logger.info("服务器将监听 http://localhost:5000")
+    logger.info("语音生成前端 http://localhost:8001")
+    logger.info("请求链接示例 http://localhost:5000/tts?name=后羿&text=周日被我射熄火了，所以今天是周一！")
     app.run(host='0.0.0.0', port=5000, threaded=True)
