@@ -2,7 +2,8 @@
 # 定义Ubuntu的安装目录路径
 current_dir=$(pwd)
 TTS_dir="$current_dir/TmxFlow-Spark"
-config_file="$TTS_dir/config.yaml"
+backend_url="https://ixfjmr--8002.ap-beijing.cloudstudio.work/speak"
+declare -i port=5000
 
 # 颜色定义
 RED='\033[38;5;203m'      # 浅珊瑚红
@@ -22,12 +23,7 @@ deploy() {
         check_deps() {
             local missing=()
             [ ! -x "$(command -v git)" ] && missing+=("git")
-            [ ! -x "$(command -v sshpass)" ] && missing+=("sshpass")
-            [ ! -x "$(command -v rsync)" ] && missing+=("rsync")
             [ ! -x "$(command -v python3)" ] && missing+=("python3")
-            [ ! -x "$(command -v yq)" ] && missing+=("yq")
-            [ ! -x "$(command -v ssh)" ] && missing+=("openssh")
-            [ ! -x "$(command -v ruby)" ] && missing+=("ruby")
             
             # 安装基础依赖
             if [ ${#missing[@]} -gt 0 ]; then
@@ -90,17 +86,6 @@ deploy() {
 }
 
 
-# 配置解析函数
-parse_config() {
-    echo -n "🔍 解析配置文件..."
-    HOST=$(yq -r '.ssh.host' $config_file 2>/dev/null)
-    PORT=$(yq -r '.ssh.port' $config_file 2>/dev/null)
-    USER=$(yq -r '.ssh.username' $config_file 2>/dev/null)
-    PASSWORD=$(yq -r '.ssh.password' $config_file 2>/dev/null)
-    SERVER="$USER@$HOST"
-    echo -e "${GREEN}完成${NC}"
-}
-
 # 公共函数定义
 check_status() {
   if [ $? -eq 0 ]; then
@@ -110,183 +95,75 @@ check_status() {
   fi
 }
 
-sync_roles() {
-  # 清除已知主机记录
-  ssh-keygen -R "[$HOST]:$PORT" >/dev/null 2>&1
-  REMOTE_PATH="/Fast-Spark-TTS/data/roles/"
-  LOCAL_PATH="$TTS_dir/data/roles/"
-
-  mkdir -p ${LOCAL_PATH}
-  echo -n "🔄 同步角色文件..."
-  
-  if [ -z "$(ls -A ${LOCAL_PATH})" ]; then
-    sshpass -p "$PASSWORD" rsync -avz --progress \
-      -e "ssh -p $PORT -o StrictHostKeyChecking=no" \
-      ${USER}@${HOST}:${REMOTE_PATH} ${LOCAL_PATH}
-  else
-    sshpass -p "$PASSWORD" rsync -avz --progress --delete \
-      -e "ssh -p $PORT -o StrictHostKeyChecking=no" \
-      ${LOCAL_PATH} ${USER}@${HOST}:${REMOTE_PATH}
-  fi
-  check_status
-}
-
-establish_tunnel() {
-  # 先终止该端口所有现存隧道
-  pids=$(ps aux | grep "[s]sh.*-L.*:$1" | awk '{print $2}')
-  if [ -n "$pids" ]; then
-    echo -e "🕙 清理现存连接..."
-    echo $pids | xargs kill -9 >/dev/null 2>&1
-    sleep 1 # 等待进程完全退出
-  fi
-
-  # 清除已知主机记录
-  ssh-keygen -R "[$HOST]:$PORT" >/dev/null 2>&1
-  echo -n "🛰️ 建立隧道 $1..."
-  
-  # 建立新连接
-  sshpass -p "$PASSWORD" ssh \
-    -o StrictHostKeyChecking=no \
-    -o UserKnownHostsFile=/dev/null \
-    -o ConnectTimeout=10 \
-    -L $1:localhost:$1 \
-    -p $PORT \
-    -fNq $SERVER
-
-  # 状态检测
-  if ps aux | grep -q "[s]sh.*-L.*:$1"; then
-    echo -e "${GREEN}✅ 成功${NC}"
-  else
-    echo -e "${RED}❌ 失败${NC}"
-  fi
-}
-
-check_port() {
-  echo -n "🔍 测试端口 $1..."
-  if curl -Ism 2 http://localhost:$1 >/dev/null; then
-    echo -e "${GREEN}✅ 活跃${NC}"
-  else
-    echo -e "${YELLOW}⚠️ 未响应${NC}"
-  fi
-}
 
 # 启动界面
 show_menu() {
 
+    cd $current_dir
     while true; do
         clear
         cat $TTS_dir/TMX_logo.txt | lolcat 
         echo -e "${BLUE}\n════════════════════════════════════════════════════════════════════════════${NC}"
-        echo -e "${GREEN}➤ 1. 启动应用程序            ${YELLOW}➤ 2. 同步远程文件${NC}"
-        echo -e "${CYAN}➤ 3. 修改服务器地址/端口     ${BLUE}➤ 4. 修改账户信息${NC}"
-        echo -e "${PURPLE}➤ 5. 更新应用程序            ${RED}➤ 0. 退出系统${NC}"
+        echo -e "${GREEN}➤ 1. 启动应用程序            ${YELLOW}➤ 2. 修改服务器地址${NC}"
+        echo -e "${PURPLE}➤ 3. 更新应用程序            ${RED}➤ 0. 退出系统${NC}"
         echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════${NC}"
         echo -e "${YELLOW}请选择操作 [0-4]:${NC}"
         read option
         
         case $option in
             1)
-                parse_config
-                
-                echo -e "\n${YELLOW}=== 🛠️ 调试信息 ===${NC}"
-                echo "🏷️ HOST: $HOST"
-                echo "🔌 PORT: $PORT"
-                echo "👤 USER: $USER"
-                echo "🖥️ SERVER: $SERVER"
-    
-                # 建立本地隧道 🔄
-                echo -e "\n${YELLOW}=== 🔗 本地隧道建立 ===${NC}"
-                
-                establish_tunnel 8002
-                establish_tunnel 8001
-                
-                # 最终验证 🔄
-                echo -e "\n${YELLOW}=== 🧪 最终验证 ===${NC}"      
-                
-                echo -e "\n🔧 后端服务状态："
-                check_port 8002
-                echo -e "\n🖥️ 前端服务状态："
-                check_port 8001
-                
-                echo -e "\n🚨 访问测试："
-                echo -e "${GREEN}🔧 后端服务：${NC}curl -I http://localhost:8002"
-                echo -e "${GREEN}🌐 前端界面：${NC}打开浏览器访问 http://localhost:8001"
-    
                 # 启动应用
                 echo -e "\n${CYAN}🚀 正在启动应用...${NC}"
                 cd $TTS_dir
                 source venv/bin/activate
-                python3 main.py
+                python3 main.py --backend_url $backend_url --port $port
                 deactivate
     
-                read -p "按回车键返回主菜单..."
+                read -p "⏎ 按回车键返回主菜单..."
                 ;;
-    
             2)
-                parse_config
+                if [ -n "$backend_url" ]; then
+                    echo -e "${YELLOW}🛠️ 当前服务器地址: ${BLUE}$backend_url${NC}"
+                    echo -e "${YELLOW}\n🔧 是否要修改? [Y/n]${NC}"
+                    read confirm
+                else
+                    confirm="Y"
+                fi
                 
-                echo -e "\n${YELLOW}=== 📂 文件同步 ===${NC}"
-                ssh-keygen -R "[$HOST]:$PORT" >/dev/null 2>&1
-                sync_roles
-    
-                read -p "按回车键返回主菜单..."
+                if [[ $confirm =~ ^[Yy]$ || $confirm == "" ]]; then
+                    echo -e "${YELLOW}🌐 请输入新的服务器地址:${NC}"
+                    read new_url
+                    
+                    # 处理URL逻辑
+                    processed_url="$new_url"
+                    
+                    # 判断是否为腾讯云地址（同时包含 .ap 和 work）
+                    if [[ $processed_url == *".ap"* && $processed_url == *"work"* ]]; then
+                        # 插入端口号（仅在 .ap 前无 -- 时添加）
+                        if [[ $processed_url == *".ap"* ]]; then
+                            if ! echo "$processed_url" | grep -qE ".*--.*\.ap"; then
+                                processed_url=$(echo "$processed_url" | sed 's/\.ap/--8002.ap/')
+                            fi
+                        fi
+                        # 强制替换路径为 /work/speak
+                        processed_url=$(echo "$processed_url" | sed 's|work/.*|work/speak|')
+                    else
+                        echo -e "${YELLOW}⚠️ 非标准腾讯云地址，保留原始路径${NC}"
+                    fi
+                    
+                    backend_url=$processed_url
+                    
+                    sed -i -E "s|^backend_url[[:space:]]*=.*|backend_url=\"${processed_url//&/\\&}\"|" "$current_dir/$0"
+                    echo -e "${GREEN}\n✅ 配置更新成功: ${BLUE}$processed_url\n${NC}"
+                else
+                    echo -e "${YELLOW}🚫 已保留原始配置\n${NC}"
+                fi
+                read -p "⏎ 按回车键返回主菜单..."
                 ;;
             3)
-                echo -e "\n${YELLOW}🛠️ 请输入服务器地址（格式 host:port 或 tcp://host:port）"
-                echo -e "示例：tcp://18.tcp.cpolar.top:12345${NC}"
-                read -p "» " ssh_input
-
-                ssh_input=${ssh_input#tcp://}
-                
-                if [[ ! "$ssh_input" =~ ^[^:]+:[0-9]+$ ]]; then
-                    echo -e "${RED}❌ 输入格式无效！请使用 host:port 格式${NC}"
-                    sleep 2
-                    continue
-                fi
-                
-                host=${ssh_input%:*}
-                port=${ssh_input##*:}
-                
-                # 使用双引号包裹表达式，并转义内部变量
-                yq -i "
-                  .ssh.host = \"$host\" |
-                  .ssh.port = \"$port\"
-                " "$config_file"
-                
-                if [ $? -eq 0 ]; then
-                    echo -e "${GREEN}✅ 配置更新成功！当前配置：${NC}"
-                    yq '.ssh' "$config_file"
-                else
-                    echo -e "${RED}❌ 配置更新失败，请检查文件权限！${NC}"
-                fi
-                echo -e "${YELLOW}按回车键返回主菜单...${NC}"
-                read
-                ;;
-            4)
-                echo -e "\n${YELLOW}🔑 账户信息修改\n"
-                echo -e "请输入新的用户名:${NC}"
-                read  username
-                echo -e "\n${YELLOW}请输入新的密码:${NC}"
-                read password
-                
-                yq -i "
-                  .ssh.username = \"$username\" |
-                  .ssh.password = \"$password\"
-                " "$config_file"
-                
-                if [ $? -eq 0 ]; then
-                    echo -e "\n${GREEN}✅ 账户信息已更新！当前配置${NC}"
-                    yq '.ssh' "$config_file"
-                else
-                    echo -e "${RED}❌ 更新失败，请检查配置文件！${NC}"
-                fi
-                echo -e "${YELLOW}按回车键返回主菜单...${NC}"
-                read
-                ;;
-            5)
                 echo -e "\n${CYAN}🔄 正在更新应用程序...${NC}"
                 cd $TTS_dir
-                git pull && echo -e "\n${GREEN}✅ 应用程序已更新${NC}\n"
+                git pull origin Tencent_CS && echo -e "\n${GREEN}✅ 应用程序已更新${NC}\n"
                 echo -e "${YELLOW}按回车键返回主菜单...${NC}"
                 read
                 ;;
@@ -295,8 +172,8 @@ show_menu() {
                 exit 0
                 ;;
             *)
-                echo -e "${RED}⚠️ 无效选项，请重新输入！${NC}"
-                sleep 1
+                echo -e "${RED}⚠️ 无效选项，请重新输入！${NC}\n"
+                read -p "⏎ 按回车键返回主菜单..."
                 ;;
         esac
     done
