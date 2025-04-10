@@ -23,7 +23,7 @@ deploy_process() {
 
     # 检查必要工具
     echo -e "\n${BLUE}🔍 检查系统必要工具...${RESET}"
-    for pkg in python3 git unzip rsync lsof; do
+    for pkg in python3 git lsof; do
         if ! command -v $pkg &> /dev/null; then
             echo -e "${YELLOW}⚠️  未找到 $pkg，正在安装...${RESET}"
             apt update -y && apt install -y $pkg
@@ -33,11 +33,6 @@ deploy_process() {
         fi
     done
     
-    # 安装ssh
-    if [ ! -f "/etc/init.d/ssh" ]; then
-        apt update && apt install -y ssh
-    fi
-
     # 克隆仓库
     echo -e "\n${BLUE}📂 克隆项目仓库...${RESET}"
     if [ ! -d "/Fast-Spark-TTS" ]; then
@@ -104,43 +99,6 @@ deploy_process() {
     else
         echo -e "${CYAN}✔️  模型已存在，跳过下载${RESET}"
     fi
-
-    # 安装cpolar
-    echo -e "\n${BLUE}🌐 配置内网穿透工具...${RESET}"
-    cd / || exit
-    if [ ! -f "cpolar" ]; then
-        echo -e "${YELLOW}⬇️  下载cpolar客户端...${RESET}"
-        wget --show-progress -q -O "cpolar.zip" "https://www.cpolar.com/static/downloads/releases/3.3.18/cpolar-stable-linux-amd64.zip" || {
-                    echo -e "${RED}❌ cpolar下载失败!${RESET}"
-                    exit 1
-                }
-        unzip -o -q cpolar.zip
-        chmod +x cpolar
-        token=""
-        while [ -z "$token" ]; do
-            echo -e "${CYAN}🔑 请输入您的cpolar token（可在官网控制台获取）：${RESET}"
-            read -p "> " token
-        done
-        ./cpolar authtoken "$token"
-        echo -e "${GREEN}✅ cpolar配置完成！${RESET}"
-    else
-        echo -e "${CYAN}✔️  cpolar已安装，跳过配置${RESET}"
-    fi
-
-    # 配置SSH
-    echo -e "\n${BLUE}🔐 配置SSH服务...${RESET}"
-    need_config=0
-    grep -qxF "PermitRootLogin yes" /etc/ssh/sshd_config || { echo "PermitRootLogin yes" >> /etc/ssh/sshd_config; need_config=1; }
-    grep -qxF "Port 2020" /etc/ssh/sshd_config || { echo "Port 2020" >> /etc/ssh/sshd_config; need_config=1; }
-    
-    if [ $need_config -eq 1 ]; then
-        echo -e "${YELLOW}🛠️  需要配置SSH，请设置root密码：${RESET}"
-        passwd root
-        /etc/init.d/ssh restart
-        echo -e "${GREEN}✅ SSH配置更新完成！${RESET}"
-    else
-        echo -e "${CYAN}✔️  SSH配置已生效，跳过修改${RESET}"
-    fi
     
     # 设置自启动
     echo -e "\n${BLUE}🔄 配置自启动服务...${RESET}"
@@ -161,23 +119,13 @@ start_process() {
     
     while true; do
         echo -e "\n${BOLD}${CYAN}请选择操作：${RESET}"
-        echo -e "1. 🌐 启动cpolar内网穿透"
-        echo -e "2. 🚀 启动Spark语音服务"
-        echo -e "3. 🔑 修改cpolar token"
-        echo -e "4. 🔒 修改root密码"
+        echo -e "1. 🚀 启动Spark语音服务"
         echo -e "0. 🚪 退出系统"
-        echo -ne "${BOLD}👉 请输入数字选择 [0-4]: ${RESET}"
+        echo -ne "${BOLD}👉 请输入数字选择 [0-1]: ${RESET}"
         read -r choice
 
         case $choice in
-            1) 
-                cd /
-                echo -e "\n${YELLOW}⏳ 正在启动cpolar服务...${RESET}"
-                pkill -f cpolar
-                ./cpolar tcp 2020 > /dev/null &
-                echo -e "${GREEN}✅ cpolar已启动！访问地址：${CYAN}https://dashboard.cpolar.com${RESET}"
-                ;;
-            2)
+            1)
                 # 启动服务逻辑
                 echo -e "\n${YELLOW}⏳ 正在启动服务...${RESET}"
                 cd /Fast-Spark-TTS || { echo -e "${RED}🚨 错误：项目目录不存在${RESET}"; continue; }
@@ -272,16 +220,6 @@ start_process() {
                 fi
                 cd /
                 ;;
-            3) 
-                echo -ne "\n${CYAN}请输入新的cpolar token: ${RESET}"
-                read -r new_token
-                ./cpolar authtoken "$new_token"
-                echo -e "${GREEN}✅ Token更新成功！${RESET}"
-                ;;
-            4) 
-                echo -e "\n${YELLOW}🔐 正在修改root密码...${RESET}"
-                passwd root
-                ;;
             0) 
                 echo -e "\n${GREEN}🎉 感谢使用，再见！${RESET}"
                 exit 0
@@ -300,4 +238,4 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 deploy_process
-start_process
+start_process 
