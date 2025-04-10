@@ -1,6 +1,0 @@
-# SSH连接配置
-ssh:
-  host: 
-  port: 
-  username: 
-  password: 
