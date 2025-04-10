@@ -5,17 +5,18 @@ import struct
 import urllib.parse
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
-from flask import Flask, request, Response, send_file
+from flask import Flask, request, Response, send_file, current_app
 import httpx
 import logging
 import time
 import traceback
+import argparse
 
 # 欢迎页面
 def show_welcome():
     print("\033[38;5;213m")  # 使用柔和的品红色
     print("  ╭"+"─"*64+"╮")
-    print("  │ \033[1;38;5;231m🦄 \033[38;5;219mTermux Flow Spark-TTS Server  \033[0;38;5;213mv2.0.1"+ " "*24 +"│")
+    print("  │ \033[1;38;5;231m🦄 \033[38;5;219mTermux Flow Spark-TTS Server  \033[0;38;5;213mv3.0.0"+ " "*24 +"│")
     print("  ├"+"─"*64+"┤")
     print("  │ \033[38;5;219m✦ 数据流向示意图：" + "━"*40 + "━━━┓ \033[38;5;213m│")
     print("  │ \033[38;5;225m   🎼 Spark-TTS → 🦊 Proxy Server → 📦 Cache →  🌸 SillyTevan\033[38;5;213m  │")
@@ -150,7 +151,7 @@ def tts_proxy():
                 return send_file(cache_path, mimetype='audio/wav')
 
             # 构造后端请求
-            backend_url = 'http://localhost:8002/speak'
+            backend_url = current_app.config['BACKEND_URL']
             headers = {'Content-Type': 'application/json'}
             payload = {
                 "name": params['name'],
@@ -240,13 +241,27 @@ def tts_proxy():
 if __name__ == '__main__':
     show_welcome()
     
+    # 解析命令行参数
+    parser = argparse.ArgumentParser(description='Spark-TTS代理服务')
+    parser.add_argument('--backend_url', 
+                      default='http://localhost:8002/speak',
+                      help='后端TTS服务地址（默认：http://localhost:8002/speak）')
+    parser.add_argument('--port',
+                      type=int,
+                      default=5000,
+                      help='服务监听端口（默认：5000）')
+    args = parser.parse_args()
+    
     # 修改Flask运行方式，使用安静模式
     import sys
     cli = sys.modules['flask.cli']
     cli.show_server_banner = lambda *args, **kwargs: None
     
+    # 配置Flask应用
+    app.config['BACKEND_URL'] = args.backend_url
+    
     # 启动应用
-    logger.info("服务器将监听 http://localhost:5000")
-    logger.info("语音生成前端 http://localhost:8001")
-    logger.info("请求链接示例 http://localhost:5000/tts?name=后羿&text=周日被我射熄火了，所以今天是周一！")
-    app.run(host='0.0.0.0', port=5000, threaded=True)
+    logger.debug(f"后端服务地址: {app.config['BACKEND_URL']}")
+    logger.info(f"服务器将监听 http://localhost:{args.port}")
+    logger.info(f"请求链接示例 http://localhost:{args.port}/tts?name=后羿&text=周日被我射熄火了，所以今天是周一！")
+    app.run(host='0.0.0.0', port=args.port, threaded=True)
