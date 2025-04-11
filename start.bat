@@ -158,19 +158,24 @@ if defined backend_url (
             if "!backend_url:--=!" == "!backend_url!" (
                 echo 检测到腾讯云地址，正在处理...
                 set "backend_url=!backend_url:.ap=--8002.ap!"
-                set "backend_url=!backend_url:.work=.work/speak!"
-                for /f "delims=?" %%a in ("!backend_url!") do set "backend_url=%%a"
-                set "backend_url=!backend_url:.work/speak/=!.work/speak!" 2>nul
+                set "temp=!backend_url:.work=#!"
+                rem 分割出.work前的域名部分
+                for /f "tokens=1 delims=#" %%a in ("!temp!") do set "base=%%a"
+                rem 拼接目标路径
+                set "backend_url=!base!.work/speak"
                 
             ) else (
-                set "backend_url=!backend_url:.work=.work/speak!"
-                for /f "delims=?" %%a in ("!backend_url!") do set "backend_url=%%a"
-                set "backend_url=!backend_url:.work/speak/=!.work/speak!" 2>nul
+                set "temp=!backend_url:.work=#!"
+                rem 分割出.work前的域名部分
+                for /f "tokens=1 delims=#" %%a in ("!temp!") do set "base=%%a"
+                rem 拼接目标路径
+                set "backend_url=!base!.work/speak"
             )
         )
     )
 )
-if not "%backend_url%"=="" set "launch_args=--backend_url %backend_url%"
+
+if not "!backend_url!"=="" set "launch_args=--backend_url !backend_url!"
 if not "%port%"=="" set "launch_args=!launch_args! --port %port%"
 
 echo 🚀 正在启动应用，命令：python main.py %launch_args%
