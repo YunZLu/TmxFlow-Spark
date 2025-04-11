@@ -110,7 +110,7 @@ show_menu() {
         echo -e "${CYAN}➤ 3. 修改服务器地址/端口     ${BLUE}➤ 4. 修改账户信息${NC}"
         echo -e "${PURPLE}➤ 5. 更新应用程序            ${RED}➤ 0. 退出系统${NC}"
         echo -e "${BLUE}════════════════════════════════════════════════════════════════════════════${NC}"
-        echo -e "${YELLOW}请选择操作 [0-4]:${NC}"
+        echo -e "${YELLOW}请选择操作 [0-5]:${NC}"
         read option
         
         case $option in
@@ -194,7 +194,7 @@ show_menu() {
                   current_time=$(date +%s)
                   if (( current_time - start_time >= timeout )); then
                     echo -e "${RED}⏰ 后端服务启动超时，请检查 ~/server.log${NC}"
-                    
+                    break
                   fi
                   sleep 5
                 done
