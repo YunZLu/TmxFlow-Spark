@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul
+set PYTHONIOENCODING=utf-8
 setlocal enabledelayedexpansion
 
 set "BAT_DIR=%~dp0"
@@ -158,10 +159,12 @@ if defined backend_url (
                 echo 检测到腾讯云地址，正在处理...
                 set "backend_url=!backend_url:.ap=--8002.ap!"
                 set "backend_url=!backend_url:.work=.work/speak!"
+                for /f "delims=?" %%a in ("!backend_url!") do set "backend_url=%%a"
                 set "backend_url=!backend_url:.work/speak/=!.work/speak!" 2>nul
                 
             ) else (
                 set "backend_url=!backend_url:.work=.work/speak!"
+                for /f "delims=?" %%a in ("!backend_url!") do set "backend_url=%%a"
                 set "backend_url=!backend_url:.work/speak/=!.work/speak!" 2>nul
             )
         )
@@ -177,4 +180,3 @@ if defined launch_args (
     python main.py
 )
 endlocal
- 
