@@ -116,6 +116,7 @@ show_menu() {
                 echo -e "\n${CYAN}🚀 正在启动应用...${NC}"
                 cd $TTS_dir
                 source venv/bin/activate
+                echo -e "\n${YELLOW}⏰ 执行命令: python3 main.py --backend_url $backend_url --port $port${NC}"
                 python3 main.py --backend_url $backend_url --port $port
                 deactivate
     
