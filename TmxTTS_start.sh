@@ -2,7 +2,7 @@
 # 定义Ubuntu的安装目录路径
 current_dir=$(pwd)
 TTS_dir="$current_dir/TmxFlow-Spark"
-backend_url="https://ixfjmr--8002.ap-beijing.cloudstudio.work/speak"
+backend_url=""
 declare -i port=5000
 
 # 颜色定义
